@@ -25,7 +25,7 @@ default_run_options[:pty] = true
 set :application, "monster-fleet"
 set :repository, "git://github.com/eliasbaixas/monster-fleet.git"
 set :keep_releases, 3
-set :rails_env, "development"
+set :rails_env, "staging"
 set :scm, :git
 set :host, "monsters.baixas.net"
 set :deploy_root, "/data/www/monsters"
@@ -45,19 +45,19 @@ role :app, "monsters.baixas.net"
 role :web, "monsters.baixas.net"
 role :db, "monsters.baixas.net", :primary => true
 
-desc "Returns last lines of log file. Usage: cap log [-s lines=100] [-s rails_env=development]"  
+desc "Returns last lines of log file. Usage: cap log [-s lines=100] [-s rails_env=staging]"  
 task :log do
   lines     = variables[:lines] || 100
-  rails_env = variables[:rails_env] || 'development'  
+  rails_env = variables[:rails_env] || 'staging'  
   run "tail -n #{lines} #{shared_path}/log/#{rails_env}.log" do |ch, stream, out|  
     puts out  
   end
 end
 
-desc "Remote console on the development appserver"
+desc "Remote console on the staging appserver"
 task :console, :roles => :app do
   input = ''
-  run "cd #{current_path} && ./script/console development" do
+  run "cd #{current_path} && ./script/console staging" do
     |channel, stream, data|
     next if data.chomp == input.chomp || data.chomp == ''
     print data
@@ -92,6 +92,6 @@ namespace :deploy do
 
   desc "Restart Application"
   task :restart, :roles => :app do
-    run "touch #{current_release}/tmp/restart.txt"
+    run "RAILS_ENV=staging nohup rails server &"
   end
 end
