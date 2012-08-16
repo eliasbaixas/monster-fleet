@@ -1,0 +1,20 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Name:</b>
+  <%= @monster.name %>
+</p>
+
+<p>
+  <b>Image :</b>
+  <%= image_tag @monster.image.url(:medium) %>
+</p>
+
+<p>
+  <b>Description:</b>
+  <%= @monster.description %>
+</p>
+
+
+<%= link_to 'Edit', edit_monster_path(@monster) %> |
+<%= link_to 'Back', monsters_path %>
