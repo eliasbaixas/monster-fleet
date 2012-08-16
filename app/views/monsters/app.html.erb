@@ -3,8 +3,7 @@
 <script type="text/javascript">
   $(document).ready(function(){
 
-      $('div.destroy')
-      .live('click', function(){
+      $('div.destroy').live('click', function(){
         $(this).trigger('destroy');
         })
 
@@ -36,36 +35,44 @@
           }); 
         }
         })
-      .live('blur', function(){
-        if($(this).data('before') != $(this).text()){
-        $(this).trigger('change');
-        }
-        });
+  .live('blur', function(){
+      if($(this).data('before') != $(this).text()){
+      $(this).trigger('change');
+      }
+      });
 
-      monsters.fetch({
+  monsters.fetch({
 success: function(e){
 e.each(function(m){
   new MonsterView({model:m});
   });
 }
 });
-      })
-function new_monster(){
-  var templ = _.template($('#monster-form-template').html());
-  var form = templ({});
-  var appended = $('#forms').append(form);
-  $(appended).ajaxForm(function() {
-          monsters.fetch();
-          });
+
+$('#forms > form').ajaxForm(function() {
+    $('#monsters').html('');
+    monsters.reset();
+    $('#forms > form input, #forms > form textarea').val('');
+
+    monsters.fetch({
+success: function(e){
+e.each(function(m){
+  new MonsterView({model:m});
+  });
 }
+});
+
+    });
+})
+
+
 </script>
 
 <div id="monsters">
 </div>
 
-<%= link_to_function "New", "new_monster()" %>
-
 <div id="forms">
+  <%= render :partial => 'form' %>
 </div>
 
 <script type="text/template" id="monster-template">
@@ -79,9 +86,6 @@ function new_monster(){
   </div>
 </script>
 
-<script type="text/template" id="monster-form-template">
-  <%= render :partial => 'form' %>
-</script>
 
 <script type="text/template" id="monster-file-template">
   <form action='/monsters/{{ id }}' method="post" enctype="multipart/form-data">
