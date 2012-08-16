@@ -92,6 +92,7 @@ namespace :deploy do
 
   desc "Restart Application"
   task :restart, :roles => :app do
-    run "RAILS_ENV=staging nohup rails server &"
+    run "kill $(cat tmp/pids/server.pid)"
+    run "nohup rails server -p 4000 -e staging &"
   end
 end
