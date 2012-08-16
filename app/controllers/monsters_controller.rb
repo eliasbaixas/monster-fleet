@@ -1,6 +1,8 @@
 class MonstersController < ApplicationController
-  # GET /monsters
-  # GET /monsters.json
+
+  def app
+  end
+
   def index
     @monsters = Monster.all
 
@@ -10,8 +12,6 @@ class MonstersController < ApplicationController
     end
   end
 
-  # GET /monsters/1
-  # GET /monsters/1.json
   def show
     @monster = Monster.find(params[:id])
 
@@ -21,8 +21,6 @@ class MonstersController < ApplicationController
     end
   end
 
-  # GET /monsters/new
-  # GET /monsters/new.json
   def new
     @monster = Monster.new
 
@@ -32,13 +30,10 @@ class MonstersController < ApplicationController
     end
   end
 
-  # GET /monsters/1/edit
   def edit
     @monster = Monster.find(params[:id])
   end
 
-  # POST /monsters
-  # POST /monsters.json
   def create
     @monster = Monster.new(params[:monster])
 
@@ -53,8 +48,6 @@ class MonstersController < ApplicationController
     end
   end
 
-  # PUT /monsters/1
-  # PUT /monsters/1.json
   def update
     @monster = Monster.find(params[:id])
 
@@ -69,8 +62,6 @@ class MonstersController < ApplicationController
     end
   end
 
-  # DELETE /monsters/1
-  # DELETE /monsters/1.json
   def destroy
     @monster = Monster.find(params[:id])
     @monster.destroy

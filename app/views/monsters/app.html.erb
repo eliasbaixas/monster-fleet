@@ -1,0 +1,61 @@
+<script type="text/javascript">
+  $(document).ready(function(){
+
+      $('[contenteditable]')
+      .live('focus', function(){
+        $(this).data('before', $(this).text())
+        })
+      .live('blur', function(){
+        if($(this).data('before') != $(this).text()){
+        $(this).trigger('change');
+        }
+        });
+
+      $('.imgeditable')
+      .live('click', function(){
+        if($(this).find('form').length != 0){
+        return true;
+        }else{
+        var id = parseInt($(this).attr('data'));
+        var templ = _.template($('#monster-file-template').html());
+        $(this).html(templ({id : id}));
+        }
+        })
+      .live('blur', function(){
+        if($(this).data('before') != $(this).text()){
+        $(this).trigger('change');
+        }
+        });
+
+
+
+      monsters.fetch({
+success: function(e){
+e.each(function(m){
+  new MonsterView({model:m})
+  });
+}
+});
+      })
+</script>
+
+<div id="monsters">
+</div>
+
+<script type="text/template" id="monster-template">
+  <div class="monster">
+    <h3 contentEditable='true' data="name">{{ name }}</h3>
+    <p contentEditable='true' data="description">{{ description }}</p>
+    <div class='imgeditable' data="{{ id }}">
+      <img data="image_url" src='{{ image_url }}'></img>
+    </div>
+  </div>
+</script>
+
+<script type="text/template" id="monster-file-template">
+  <form action='/monsters/{{ id }}' method="post" enctype="multipart/form-data">
+    <input name="_method" type="hidden" value="put">
+    <input name="monster[image]" type="file">
+    <input name="commit" type="submit" value="Update Monster">
+  </form>
+</script>
