@@ -1,5 +1,12 @@
+<script src="http://malsup.github.com/jquery.form.js"></script> 
+
 <script type="text/javascript">
   $(document).ready(function(){
+
+      $('div.destroy')
+      .live('click', function(){
+        $(this).trigger('destroy');
+        })
 
       $('[contenteditable]')
       .live('focus', function(){
@@ -19,6 +26,14 @@
         var id = parseInt($(this).attr('data'));
         var templ = _.template($('#monster-file-template').html());
         $(this).html(templ({id : id}));
+        $(this).find('form').ajaxForm(function() {
+          for(var i in monsters.models){
+          if(monsters.models[i].attributes.id == id){
+          monsters.models[i].fetch();
+          break;
+          }
+          }
+          }); 
         }
         })
       .live('blur', function(){
@@ -27,12 +42,10 @@
         }
         });
 
-
-
       monsters.fetch({
 success: function(e){
 e.each(function(m){
-  new MonsterView({model:m})
+  new MonsterView({model:m});
   });
 }
 });
@@ -44,6 +57,7 @@ e.each(function(m){
 
 <script type="text/template" id="monster-template">
   <div class="monster">
+    <div class="destroy"></div>
     <h3 contentEditable='true' data="name">{{ name }}</h3>
     <p contentEditable='true' data="description">{{ description }}</p>
     <div class='imgeditable' data="{{ id }}">
@@ -59,3 +73,14 @@ e.each(function(m){
     <input name="commit" type="submit" value="Update Monster">
   </form>
 </script>
+
+<script src="/javascript/lib/underscore-1.3.3.js"></script>
+<script>
+  _.templateSettings = {
+    interpolate : /\{\{([\s\S]+?)\}\}/g
+  };
+</script>
+
+<script src="/javascript/lib/backbone.js"></script>
+<script src="/javascript/lib/bootstrap.js"></script>
+<script src="/javascript/monster_fleet.js"></script>

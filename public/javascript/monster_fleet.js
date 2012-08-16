@@ -18,7 +18,8 @@ window.MonsterView = Backbone.View.extend({
     tag: 'ul',
     className: 'a-monster',
     events: {
-        'change [contentEditable]': 'change'
+        'change [contentEditable]': 'change',
+        'destroy div.destroy': 'destroy_me'
     },
 
     initialize: function() {
@@ -28,6 +29,9 @@ window.MonsterView = Backbone.View.extend({
         $('#monsters').append(this.render().el);
     },
 
+    destroy_me: function() {
+      this.model.destroy();
+    },
     render: function() {
         var data = this.model.toJSON();
         $(this.el).html(this.template(data));
