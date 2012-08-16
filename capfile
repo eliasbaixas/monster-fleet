@@ -1,0 +1,3 @@
+load 'deploy' if respond_to?(:namespace) # cap2 differentiator
+set :stages, %w(development staging production testing)
+require 'capistrano/ext/multistage'

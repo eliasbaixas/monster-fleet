@@ -1,6 +1,7 @@
 class MonstersController < ApplicationController
 
   def app
+    @monster = Monster.new
   end
 
   def index

@@ -50,9 +50,23 @@ e.each(function(m){
 }
 });
       })
+function new_monster(){
+  var templ = _.template($('#monster-form-template').html());
+  var form = templ({});
+  var appended = $('#forms').append(form);
+  $(appended).ajaxForm(function() {
+          monsters.fetch();
+          }
+          });
+}
 </script>
 
 <div id="monsters">
+</div>
+
+<%= link_to_function "New", "new_monster()" %>
+
+<div id="forms">
 </div>
 
 <script type="text/template" id="monster-template">
@@ -64,6 +78,10 @@ e.each(function(m){
       <img data="image_url" src='{{ image_url }}'></img>
     </div>
   </div>
+</script>
+
+<script type="text/template" id="monster-form-template">
+  <%= render :partial => 'form' %>
 </script>
 
 <script type="text/template" id="monster-file-template">
