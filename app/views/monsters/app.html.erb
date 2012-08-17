@@ -21,16 +21,25 @@
       <img data="image_url" src='{= get('image_url') =}'></img>
     </div>
     <div class="my_fleet">
-      {= fleet_view.render().el.innerHTML =}
     </div>
   </div>
 </script>
 
 <script type="text/template" id="fleet-mini-template">
-  <div class="well fleet  {% if(!isValid()){ %} has_errors {% } %}" style="background-color:#{= get('color') =}">
-    <bold class='name inline'>{= get('name') =}</bold>
+  <div class="one_fleet well fleet" style="background-color:#{= get('color') =}">
     <img style="width:25px;height:25px;" src='{= get('image_url') =}'></img>
+    <bold class='name inline'>{= get('name') =}</bold>
   </div>
+</script>
+
+<script type="text/template" id="fleet-multi-template">
+  <h4>Select the fleet to which this moster belongs</h4>
+  {% _.each(models, function(fleet){  %}
+    <div data="{= fleet.get('id') =}" class="many_fleet well fleet" style="background-color:#{= fleet.get('color') =}">
+      <img style="width:25px;height:25px;" src='{= fleet.get('image_url') =}'></img>
+      <bold class='name inline'>{= fleet.get('name') =}</bold>
+    </div>
+    {% }); %}
 </script>
 
 <script type="text/template" id="fleet-template">

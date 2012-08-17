@@ -4,13 +4,13 @@ window.Monster = Backbone.Model.extend({
       console.log(error);
       return true;
     });
+    var fl = find_fleet(this.get('fleet_id'));
+    var self = this;
+    fl.on("change",function(model,err){
+      self.trigger('change');
+    })
+    this.set('fleet',fl);
   }, 
-  fleet: function(){
-    for(var i in window.fleets.models){
-      if(window.fleets.models[i].get('id') == this.get('fleet_id'))
-        return window.fleets.models[i];
-    }
-  },
 validate: function(attrs) {
   if(!attrs.name)
   return "A Name must be given to the monster.";
@@ -62,21 +62,39 @@ window.MonsterCollection = Backbone.Collection.extend({
 window.monsters = new MonsterCollection();
 window.fleets = new FleetCollection();
 
+function find_fleet(id){
+  for(var i in window.fleets.models)
+    if(window.fleets.models[i].get('id') == id)
+      return window.fleets.models[i];
+  return null;
+}
+
 window.MonsterView = Backbone.View.extend({
+  initialize: function() {
+    this.model.bind('change', this.render, this);
+    this.model.bind('destroy', this.remove, this);
+
+    this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
+    var self=this;
+    function changed_fleet_ev_handler(iid){
+      console.log("CHANGED FLEET TO:"+iid);
+      self.model.set('fleet_id',iid);
+      self.model.save();
+      self.model.set('fleet',find_fleet(iid));
+      self.fleet_view = new FleetMiniView({model:self.model.get('fleet')});
+      self.fleet_view.on('changed_fleet',changed_fleet_ev_handler);
+      self.render();
+    }
+    this.fleet_view.on('changed_fleet',changed_fleet_ev_handler)
+    
+    $('#monsters').append(this.render().el);
+  },
   template: _.template($('#monster-template').html()),
   tag: 'ul',
   className: 'a-monster',
   events: {
     'change [contentEditable]': 'change',
   'destroy span.destroy': 'destroy_me'
-  },
-
-  initialize: function() {
-    this.model.bind('change', this.render, this);
-    this.model.bind('destroy', this.remove, this);
-
-    this.fleet_view = new FleetMiniView({model:this.model.fleet()});
-    $('#monsters').append(this.render().el);
   },
   destroy_me: function() {
     this.model.destroy();
@@ -85,6 +103,7 @@ window.MonsterView = Backbone.View.extend({
     var data = this.model;
     data.fleet_view = this.fleet_view;
     $(this.el).html(this.template(data));
+    $(this.el).find('.my_fleet').html(this.fleet_view.render().el);
     return this;
   },
 
@@ -102,12 +121,34 @@ window.MonsterView = Backbone.View.extend({
 
 window.FleetMiniView = Backbone.View.extend({
   template: _.template($('#fleet-mini-template').html()),
+  template_multi: _.template($('#fleet-multi-template').html()),
   initialize: function() {
     this.model.bind('change', this.render, this);
   },
+  events: {
+    'click div.one_fleet': 'expand',
+    'click div.many_fleet' : 'select'
+  },
+  select: function(ev){
+    var iid=parseInt($(ev.currentTarget).attr('data'));
+    this.expanded = false;
+    this.trigger('changed_fleet', iid);
+  },
+  expand: function(ev){
+    if(this.expanded)
+      return;
+    this.expanded = true;
+    this.render();
+    console.log('expanded');
+  },
   render: function() {
-    var data = this.model;
-    $(this.el).html(this.template(data));
+    if(this.expanded){
+      $(this.el).html(this.template_multi(window.fleets));
+    }else{
+      var data = this.model;
+      $(this.el).html(this.template(data));
+    }
+    this.delegateEvents(this.events);
     return this;
   }
 })

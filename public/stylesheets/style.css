@@ -6,6 +6,7 @@
 }
 .monster .name {
   min-width: 10px;
+  display: inline-block;
 }
 .monster .editable:hover  {
   border-left: 1px solid red;
