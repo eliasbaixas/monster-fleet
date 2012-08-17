@@ -1,0 +1,29 @@
+<%= form_for(@fleet, :html => { :multipart => true } ) do |f| %>
+  <% if @fleet.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@fleet.errors.count, "error") %> prohibited this fleet from being saved:</h2>
+      <ul>
+      <% @fleet.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.text_field :name, :placeholder => "Name" %>
+  </div>
+  <div class="field">
+    <%= f.label :image %>
+    <%= f.file_field :image %>
+  </div>
+  <div class="field">
+    <%= f.text_area :description, :placeholder => "Description", :columns => 10, :rows => 5 %>
+  </div>
+  <div class="field">
+    <%= f.text_field :color, :placeholder => "Color (in hex)" %>
+  </div>
+  <div class="actions">
+    <%= f.submit :class => "btn-primary" %>
+  </div>
+<% end %>

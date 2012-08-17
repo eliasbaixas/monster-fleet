@@ -11,7 +11,19 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120816124414) do
+ActiveRecord::Schema.define(:version => 20120817155844) do
+
+  create_table "fleets", :force => true do |t|
+    t.string   "name"
+    t.string   "image_file_name"
+    t.integer  "image_file_size"
+    t.string   "image_content_type"
+    t.datetime "image_updated_at"
+    t.text     "description"
+    t.string   "color"
+    t.datetime "created_at",         :null => false
+    t.datetime "updated_at",         :null => false
+  end
 
   create_table "monsters", :force => true do |t|
     t.string   "name"
@@ -22,6 +34,7 @@ ActiveRecord::Schema.define(:version => 20120816124414) do
     t.text     "description"
     t.datetime "created_at",         :null => false
     t.datetime "updated_at",         :null => false
+    t.integer  "fleet_id"
   end
 
 end

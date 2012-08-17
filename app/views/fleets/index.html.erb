@@ -1,0 +1,29 @@
+<h1>Listing fleets</h1>
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Image</th>
+    <th>Description</th>
+    <th>Color</th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @fleets.each do |fleet| %>
+  <tr>
+    <td><%= fleet.name %></td>
+    <td><%= image_tag fleet.image.url(:thumb) %></td>
+    <td><%= fleet.description %></td>
+    <td style="background-color:#<%=fleet.color%>"><%= fleet.color %></td>
+    <td><%= link_to 'Show', fleet %></td>
+    <td><%= link_to 'Edit', edit_fleet_path(fleet) %></td>
+    <td><%= link_to 'Destroy', fleet, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New Fleet', new_fleet_path %>

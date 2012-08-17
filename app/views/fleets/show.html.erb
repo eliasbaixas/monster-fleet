@@ -1,0 +1,25 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Name:</b>
+  <%= @fleet.name %>
+</p>
+
+<p>
+  <b>Image :</b>
+  <%= image_tag @fleet.image.url(:thumb) %>
+</p>
+
+<p>
+  <b>Description:</b>
+  <%= @fleet.description %>
+</p>
+
+<p style="background-color:#<%= @fleet.color %>">
+  <b>Color:</b>
+  <%= @fleet.color %>
+</p>
+
+
+<%= link_to 'Edit', edit_fleet_path(@fleet) %> |
+<%= link_to 'Back', fleets_path %>

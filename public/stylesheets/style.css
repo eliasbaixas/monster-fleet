@@ -1,2 +1,18 @@
-.top-row { padding-top: 50px; }
-.destroy {width: 8px; height:8px; background-color: red; }
+.top-row {
+  padding-top: 50px;
+}
+.has_errors {
+  border: 2px solid red;
+}
+.monster .name {
+  min-width: 10px;
+}
+.monster .editable:hover  {
+  border-left: 1px solid red;
+}
+.monster > .inline {
+  display: inline-block;
+  margin-left: 10px;
+}
+.destroy { font-size: 12px; cursor: pointer; }
+.destroy:hover { background-color: red; }
