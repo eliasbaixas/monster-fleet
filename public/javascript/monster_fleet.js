@@ -4,7 +4,12 @@ window.Monster = Backbone.Model.extend({
       console.log(error);
       return true;
     });
-    var fl = find_fleet(this.get('fleet_id'));
+    if(this.get('fleet_id')){
+      var fl = find_fleet(this.get('fleet_id'));
+    }else{
+      fl=window.fleets.models[0];
+      this.set('fleet_id',fl.get('id'));
+    }
     var self = this;
     fl.on("change",function(model,err){
       self.trigger('change');

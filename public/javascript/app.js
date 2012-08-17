@@ -14,7 +14,7 @@ $(document).ready(function(){
   }
 });
 
-$('.imgeditable')
+$('.monster .imgeditable')
 .live('click', function(){
   if($(this).find('form').length != 0){
     return true;
@@ -31,12 +31,27 @@ $('.imgeditable')
       }
     }); 
   }
-})
-.live('blur', function(){
-  if($(this).data('before') != $(this).text()){
-    $(this).trigger('change');
+});
+$('.fleet .imgeditable')
+.live('click', function(){
+  if($(this).find('form').length != 0){
+    return true;
+  }else{
+    var id = parseInt($(this).attr('data'));
+    var templ = _.template($('#fleet-file-template').html());
+    $(this).html(templ({id : id}));
+    $(this).find('form').ajaxForm(function() {
+      for(var i in fleets.models){
+        if(fleets.models[i].attributes.id == id){
+          fleets.models[i].fetch();
+          break;
+        }
+      }
+    }); 
   }
 });
+
+
 
 fleets.fetch({
   error: function(e){console.log('error:');console.log(e);},
