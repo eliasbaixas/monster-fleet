@@ -8,12 +8,24 @@
   min-width: 10px;
   display: inline-block;
 }
-.monster .editable:hover  {
-  border-left: 1px solid red;
-}
+.editable:hover  { border-left: 1px solid red; }
 .monster > .inline {
   display: inline-block;
   margin-left: 10px;
+}
+.many_fleet {
+  padding: 5px;
+  margin: 1px;
+  -webkit-border-radius: 3px;
+     -moz-border-radius: 3px;
+          border-radius: 3px;
+}
+.one_fleet {
+  padding: 5px;
+  margin: 1px;
+  -webkit-border-radius: 3px;
+     -moz-border-radius: 3px;
+          border-radius: 3px;
 }
 .destroy { font-size: 12px; cursor: pointer; }
 .destroy:hover { background-color: red; }

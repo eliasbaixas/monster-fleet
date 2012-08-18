@@ -73,11 +73,15 @@ class FleetsController < ApplicationController
   # DELETE /fleets/1.json
   def destroy
     @fleet = Fleet.find(params[:id])
-    @fleet.destroy
 
     respond_to do |format|
-      format.html { redirect_to fleets_url }
-      format.json { head :no_content }
+      if @fleet.destroy
+        format.html { redirect_to fleets_url }
+        format.json { head :no_content }
+      else
+        format.html { render action: "show" }
+        format.json { render json: @fleet.errors, status: :unprocessable_entity }
+      end
     end
   end
 end

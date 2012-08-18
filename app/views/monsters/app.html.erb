@@ -1,5 +1,12 @@
 <script src="/javascript/lib/jquery.form.js"></script> 
 <script src="/javascript/app.js"></script>
+<ul>
+  <li>A Fleet has many Monsters, so Monster belongs to a Fleet.</li>
+  <li>You can edit Fleets and Monsters attributes in-line, just click on the attribute you want to change.</li>
+  <li>When you change any attribute on a Fleet, the views on monsters should be automatically updated as well.</li>
+  <li>You can only destroy Fleets that have no monsters (validation is don on client and on server).</li>
+  <li>Validations for attributes are done on client as well as on server side.</li>
+</ul>
 
 <div class="span4">
   <h1>Fleets</h1>
@@ -26,8 +33,8 @@
 </script>
 
 <script type="text/template" id="fleet-mini-template">
-  <div class="one_fleet well fleet" style="background-color:#{= get('color') =}">
-    <img style="width:25px;height:25px;" src='{= get('image_url') =}'></img>
+  <div class="one_fleet fleet" style="background-color:#{= get('color') =}">
+    <img style="width:30px;height:30px;" src='{= get('image_url') =}'></img>
     <bold class='name inline'>{= get('name') =}</bold>
   </div>
 </script>
@@ -35,15 +42,15 @@
 <script type="text/template" id="fleet-multi-template">
   <h4>Select the fleet to which this moster belongs</h4>
   {% _.each(models, function(fleet){  %}
-    <div data="{= fleet.get('id') =}" class="many_fleet well fleet" style="background-color:#{= fleet.get('color') =}">
-      <img style="width:25px;height:25px;" src='{= fleet.get('image_url') =}'></img>
+    <div data="{= fleet.get('id') =}" class="many_fleet fleet" style="background-color:#{= fleet.get('color') =}">
+      <img style="width:30px;height:30px;" src='{= fleet.get('image_url') =}'></img>
       <bold class='name inline'>{= fleet.get('name') =}</bold>
     </div>
     {% }); %}
 </script>
 
 <script type="text/template" id="fleet-template">
-  <div class="well fleet  {% if(!isValid()){ %} has_errors {% } %}" style="background-color:#{= get('color') =}">
+<div class="well fleet  {% if(!isValid()){ %} has_errors {% } %}" style="background-color:#{= get('color') =}">
     <span class="destroy">X</span>
     <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
     <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
