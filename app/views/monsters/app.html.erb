@@ -12,7 +12,14 @@
         })
       });
 
-    function upload_complete(collection,msg) {
+    function do_snapshot(event, resources,id) {
+      var the_elem=$(event.currentTarget).closest('.imgeditable');
+      the_elem.addClass('spinning');
+      var url = '/'+resources+'/'+ id + '/webcam?' + csrf_param + '=' + encodeURI(encodeURI(csrf_token));
+      webcam.snap(url,function(msg){ return upload_complete(resources,msg,the_elem); })
+    }
+    function upload_complete(collection,msg,el) {
+      el.removeClass('spinning');
       var id = parseInt(msg);
       collection = window[collection];
       if(id && collection) {
@@ -67,6 +74,7 @@
 </script>
 
 <script type="text/template" id="fleet-mini-template">
+  <h4>Belongs to fleet:</h4>
   <div class="one_fleet fleet" style="background-color:#{= get('color') =}">
     <img style="width:30px;height:30px;" src='{= get('image_url') =}'></img>
     <bold class='name inline'>{= get('name') =}</bold>
@@ -97,8 +105,7 @@
 
 <script type="text/template" id="file-template">
   <div class="webcam_holder"></div>
-  <input class="shoot" type="button" value="Take picture"
-  onclick="webcam.snap('/{= resources =}/{= id =}/webcam?' + csrf_param + '=' + encodeURI(encodeURI(csrf_token)),function(msg){return upload_complete('{= resources =}',msg);})"/>
+  <input class="shoot" type="button" value="Take picture" onclick="do_snapshot(event,'{= resources =}','{= id =}');"/>
   <hr/>
   <form action='/{= resources =}/{= id =}' method="post" enctype="multipart/form-data">
     <input name="_method" type="hidden" value="put">

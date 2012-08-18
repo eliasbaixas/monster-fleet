@@ -108,7 +108,16 @@ function find_fleet(fleets, id){
 
 window.MyBasicView = Backbone.View.extend({
   destroy_me: function() {
-    this.model.destroy();
+    $(myself.el).addClass('spinning');
+    this.model.destroy({
+      wait : true,
+      success : function(model,resp){
+        $(myself.el).removeClass('spinning');
+      },
+      error : function(model,resp){
+        $(myself.el).removeClass('spinning');
+      }
+    });
   },
   change: function(ev){
     if(this.before == $(ev.currentTarget).text())
@@ -116,8 +125,11 @@ window.MyBasicView = Backbone.View.extend({
     var txt = $(ev.currentTarget).text();
     var which = $(ev.currentTarget).attr('data');
     if(this.model.set(which,txt)){
-      this.model.save();
-      $(ev.currentTarget).removeClass('has_errors');
+      var xhr;
+      if(xhr=this.model.save()){
+        console.log("server says:");console.log(xhr);
+        $(ev.currentTarget).removeClass('has_errors');
+      }
     }else{
       $(ev.currentTarget).addClass('has_errors');
     }
@@ -133,7 +145,22 @@ window.MyBasicView = Backbone.View.extend({
     var templ = _.template($('#file-template').html());
     $(ev.currentTarget).html(templ({id : id, resource : this.resource, resources : this.resources}));
     var myself=this;
-    $(ev.currentTarget).find('form').ajaxForm(function(){ myself.model.fetch(); }); 
+    var myedit=$(this.el).find('.imgeditable');
+    $(ev.currentTarget).find('form').ajaxForm({
+      success : function(){
+        myedit.removeClass('spinning');
+        myself.model.fetch({
+          error:function(model,resp){ console.log("error:");console.log(resp);}
+          });
+      },
+      error : function(ev){
+        myedit.removeClass('spinning');
+        console.log(ev);
+      },
+      beforeSerialize: function($form, options) { 
+        myedit.addClass('spinning');
+      }
+    }); 
     $(this.el).trigger("monsters.form_added");
   }
 });
@@ -148,11 +175,15 @@ window.MonsterView = MyBasicView.extend({
     this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
     function changed_fleet_ev_handler(iid){
       this.model.set('fleet_id',iid);
-      this.model.save();
-      this.model.set('fleet',find_fleet(this.model.fleets, iid));
-      this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
-      this.fleet_view.on('changed_fleet',changed_fleet_ev_handler,this);
-      this.render();
+      var xhr;
+      if(xhr=this.model.save()){
+        console.log("server says:");console.log(xhr);
+        this.model.set('fleet',find_fleet(this.model.fleets, iid));
+        this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
+        this.fleet_view.on('changed_fleet',changed_fleet_ev_handler,this);
+        this.render();
+      }else{
+      }
     }
     this.fleet_view.on('changed_fleet',changed_fleet_ev_handler,this);
     
@@ -230,11 +261,21 @@ window.FleetView = MyBasicView.extend({
   },
   destroy_me: function() {
     var myid=this.model.get('id');
-    for(var i in window.monsters.models){
-      if(window.monsters.models[i].get('fleet_id') == myid)
-        return;
+    var myself=this;
+/*    if(window.monsters.some(function(monster){ if(monster.get('fleet_id') == myid) return true;})){
+      return;
     }
-    this.model.destroy();
+    */
+    $(myself.el).addClass('spinning');
+    this.model.destroy({
+      wait : true,
+      success : function(model,resp){
+        $(myself.el).removeClass('spinning');
+      },
+      error : function(model,resp){
+        $(myself.el).removeClass('spinning');
+      }
+      });
   },
   render: function() {
     var data = this.model;
@@ -242,3 +283,5 @@ window.FleetView = MyBasicView.extend({
     return this;
   }
 });
+
+

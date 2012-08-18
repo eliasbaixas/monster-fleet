@@ -29,3 +29,6 @@
 }
 .destroy { font-size: 12px; cursor: pointer; }
 .destroy:hover { background-color: red; }
+
+.spinning { background-image: url('/images/spinner.gif'); }
+.spinning > * { visibility: hidden;}
