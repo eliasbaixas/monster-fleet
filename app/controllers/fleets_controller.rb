@@ -81,7 +81,7 @@ class FleetsController < ApplicationController
         format.json { head :no_content }
       else
         format.html { render action: "show" }
-        format.json { render json: @fleet.errors, status: :unprocessable_entity }
+        format.json { render json: "Could not destory Fleet (check no monsters belong to this fleet)", status: :unprocessable_entity }
       end
     end
   end

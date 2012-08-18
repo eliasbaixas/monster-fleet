@@ -1,8 +1,8 @@
 window.BasicResource = Backbone.Model.extend({
   validates_presence_of : function(name,attrs){
     if(!attrs[name]){
-       return name+" attribute must be present.";
-    }
+       return (name+" attribute must be present.");
+    };
     return false;
   },
   validates_length_of : function(name,attrs,min,max){
@@ -53,7 +53,7 @@ window.Monster = BasicResource.extend({
     this.set('fleet',my_fleet);
   }, 
   validate: function(attrs) {
-    if(window.no_client_validations){
+    if(!window.do_client_validations){
       return ;
     }
     var msg = this.validates_presence_of('name',attrs) ||
@@ -80,7 +80,7 @@ window.Fleet = BasicResource.extend({
     });
   }, 
   validate: function(attrs) {
-    if(window.no_client_validations){
+    if(!window.do_client_validations){
       return ;
     }
     var msg = this.validates_presence_of('name',attrs) ||
@@ -135,16 +135,14 @@ window.MyBasicView = Backbone.View.extend({
     if(this.model.set(which,txt)){
       var xhr=this.model.save(null,{wait:true,
         success:function(model,resp){
-          console.log("Succeed!");
-          var ele = $(myself.el).find('.'+nam+'[contentEditable=true]').closest('.editable-holder');
+          //var ele = $(myself.el).find('.'+nam+'[contentEditable=true]').closest('.editable-holder');
           },
         error:function(model,resp){
-          console.log("server says:");
-          console.log(resp.responseText);
           var json = JSON.parse(resp.responseText);
           for(var nam in json){
             var ele = $(myself.el).find('.'+nam+'.editable-holder');
             ele.addClass('server_errors');
+            ele.find('.server_error').remove();
             ele.append('<div class="server_error">'+nam+' '+json[nam]+'</div>');
           }
         }
@@ -160,7 +158,7 @@ window.MyBasicView = Backbone.View.extend({
     this.before =  $(ev.currentTarget).text();
   },
   change_img : function(ev){
-    if($(ev.currentTarget).find('form').length != 0){
+    if($(ev.currentTarget).find('form').length != 0 || this.model.isNew()){
       return true;
     }
     var id = parseInt($(ev.currentTarget).attr('data'));
@@ -284,7 +282,7 @@ window.FleetView = MyBasicView.extend({
   destroy_me: function() {
     var myid=this.model.get('id');
     var myself=this;
-    if(!window.no_client_validations && window.check_window.monsters.some(function(monster){ if(monster.get('fleet_id') == myid) return true;})){
+    if(window.do_client_validations && window.monsters.some(function(monster){ if(monster.get('fleet_id') == myid) return true;})){
       return;
     }
     $(myself.el).addClass('spinning');
@@ -294,6 +292,7 @@ window.FleetView = MyBasicView.extend({
         $(myself.el).removeClass('spinning');
       },
       error : function(model,resp){
+        $(myself.el).append('<div class="server_errors">'+resp.responseText+'</div>');
         $(myself.el).removeClass('spinning');
       }
       });

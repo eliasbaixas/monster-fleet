@@ -4,6 +4,7 @@
 
 <script type="text/javascript">
   $(document).ready(function(){
+      window.do_client_validations = true;
       window.csrf_param = $('meta[name=csrf-param]').attr('content');
       window.csrf_token = $('meta[name=csrf-token]').attr('content');
 
@@ -46,7 +47,9 @@
   <li>When you change any attribute on a Fleet, the views on monsters should be automatically updated as well.</li>
   <li>You can only destroy Fleets that have no monsters (validation is don on client and on server).</li>
   <li>Validations for attributes are done on client as well as on server side.</li>
-  <li><input type="checkbox" checked="true" onchange="window.no_client_validations = !!!window.no_client_validations"></input> Perform Client Validations (vs. Server validations only)</li>
+  <li style="border:2px solid red;">Client-side errors are highlighted in red.</li>
+  <li style="border:2px solid #00ff00;">Server-side errors are highlighted in green.</li>
+  <li><input type="checkbox" checked="true" onchange="window.do_client_validations = !window.do_client_validations"></input> Perform Client Validations (vs. Server validations only)</li>
 </ul>
 
 <div class="span4">
