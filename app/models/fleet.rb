@@ -5,6 +5,8 @@ class Fleet < ActiveRecord::Base
 
   has_many :monsters
 
+  validates_uniqueness_of :name,:color
+
   validates_length_of :name, :in => (5..20)
   validates_length_of :description, :in => (10..30)
   validates_format_of :color, :with => /[a-fA-F0-9]{6}/

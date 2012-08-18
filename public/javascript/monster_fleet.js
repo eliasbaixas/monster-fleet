@@ -1,20 +1,24 @@
 window.Monster = Backbone.Model.extend({
-  initialize: function(){
+  initialize: function(attrs,opts){
+    this.fleets = opts.fleets;
     this.on("error", function(model, error) {
       console.log(error);
       return true;
     });
-    if(this.get('fleet_id')){
-      var fl = find_fleet(this.get('fleet_id'));
-    }else{
-      fl=window.fleets.models[0];
-      this.set('fleet_id',fl.get('id'));
+    if(this.fleets.models.length > 0){
+      var fl;
+      if(this.get('fleet_id')){
+        fl = find_fleet(this.fleets, this.get('fleet_id'));
+      }else if(this.fleets.models.length > 0){
+        fl=this.fleets.models[0];
+        this.set('fleet_id',fl.get('id'));
+      }
+      var myself = this;
+      fl.on("change",function(model,err){
+        myself.trigger('change');
+      })
+      this.set('fleet',fl);
     }
-    var self = this;
-    fl.on("change",function(model,err){
-      self.trigger('change');
-    })
-    this.set('fleet',fl);
   }, 
 validate: function(attrs) {
   if(!attrs.name)
@@ -64,13 +68,10 @@ window.MonsterCollection = Backbone.Collection.extend({
   url: 'monsters',
 });
 
-window.monsters = new MonsterCollection();
-window.fleets = new FleetCollection();
-
-function find_fleet(id){
-  for(var i in window.fleets.models)
-    if(window.fleets.models[i].get('id') == id)
-      return window.fleets.models[i];
+function find_fleet(fleets, id){
+  for(var i in fleets.models)
+    if(fleets.models[i].get('id') == id)
+      return fleets.models[i];
   return null;
 }
 
@@ -84,7 +85,7 @@ window.MonsterView = Backbone.View.extend({
       console.log("CHANGED FLEET TO:"+iid);
       this.model.set('fleet_id',iid);
       this.model.save();
-      this.model.set('fleet',find_fleet(iid));
+      this.model.set('fleet',find_fleet(this.model.fleets, iid));
       this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
       this.fleet_view.on('changed_fleet',changed_fleet_ev_handler,this);
       this.render();
@@ -94,11 +95,28 @@ window.MonsterView = Backbone.View.extend({
     $('#monsters').append(this.render().el);
   },
   template: _.template($('#monster-template').html()),
-  tag: 'ul',
+  tag: 'div',
   className: 'a-monster',
   events: {
-    'change [contentEditable]': 'change',
-  'destroy span.destroy': 'destroy_me'
+    'focus [contentEditable]' : "on_focus",
+    'blur [contentEditable]' : "change",
+    'click span.destroy' : 'destroy_me',
+    'click .monster .imgeditable' : 'change_img'
+  },
+  change_img: function(ev){
+    if($(ev.currentTarget).find('form').length != 0){
+      return true;
+    }else{
+      var id = parseInt($(ev.currentTarget).attr('data'));
+      var templ = _.template($('#monster-file-template').html());
+      $(ev.currentTarget).html(templ({id : id}));
+      var myself=this;
+      $(ev.currentTarget).find('form').ajaxForm(function() { myself.fetch(); }); 
+      $(this.el).trigger("monsters.form_added");
+    }
+  },
+  on_focus: function(ev){
+    this.before =  $(ev.currentTarget).text();
   },
   destroy_me: function() {
     this.model.destroy();
@@ -110,8 +128,9 @@ window.MonsterView = Backbone.View.extend({
     $(this.el).find('.my_fleet').html(this.fleet_view.render().el);
     return this;
   },
-
   change: function(ev){
+    if(this.before == $(ev.currentTarget).text())
+      return;
     var txt = $(ev.currentTarget).text();
     var which = $(ev.currentTarget).attr('data');
     if(this.model.set(which,txt)){
@@ -162,10 +181,25 @@ window.FleetView = Backbone.View.extend({
   tag: 'ul',
   className: 'a-fleet',
   events: {
-    'change [contentEditable]': 'change',
-  'destroy span.destroy': 'destroy_me'
+    'focus [contentEditable]' : "on_focus",
+    'blur [contentEditable]' : "change",
+    'click span.destroy': 'destroy_me',
+    'click .fleet .imgeditable' : 'change_img'
   },
-
+  change_img : function(ev){
+    if($(ev.currentTarget).find('form').length != 0){
+      return true;
+    }
+    var id = parseInt($(ev.currentTarget).attr('data'));
+    var templ = _.template($('#fleet-file-template').html());
+    $(ev.currentTarget).html(templ({id : id}));
+    var myself=this;
+    $(ev.currentTarget).find('form').ajaxForm(function(){ myself.fetch(); }); 
+    $(this.el).trigger("monsters.form_added");
+  },
+  on_focus: function(ev){
+    this.before =  $(ev.currentTarget).text();
+  },
   initialize: function() {
     this.model.bind('change', this.render, this);
     this.model.bind('destroy', this.remove, this);
@@ -186,8 +220,10 @@ window.FleetView = Backbone.View.extend({
     $(this.el).html(this.template(data));
     return this;
   },
-
   change: function(ev){
+    if(this.before == $(ev.currentTarget).text()){
+      return;
+    }
     var txt = $(ev.currentTarget).text();
     var which = $(ev.currentTarget).attr('data');
     if(this.model.set(which,txt)){

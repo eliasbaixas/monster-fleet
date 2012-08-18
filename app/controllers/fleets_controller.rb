@@ -1,6 +1,18 @@
 class FleetsController < ApplicationController
-  # GET /fleets
-  # GET /fleets.json
+
+  def webcam
+    @fleet = Fleet.find(params[:id])
+
+    fname = File.join(Rails.root,'public','uploads',"#{SecureRandom.hex}.jpg");
+    File.open(fname, 'w') do |f|
+      f.write request.raw_post.force_encoding("UTF-8")
+    end
+    @fleet.image = File.new(fname)
+    @fleet.save
+    File.unlink(fname)
+    render :text => params[:id]
+  end
+
   def index
     @fleets = Fleet.all
 
@@ -10,8 +22,6 @@ class FleetsController < ApplicationController
     end
   end
 
-  # GET /fleets/1
-  # GET /fleets/1.json
   def show
     @fleet = Fleet.find(params[:id])
 
@@ -21,8 +31,6 @@ class FleetsController < ApplicationController
     end
   end
 
-  # GET /fleets/new
-  # GET /fleets/new.json
   def new
     @fleet = Fleet.new
 
@@ -32,13 +40,10 @@ class FleetsController < ApplicationController
     end
   end
 
-  # GET /fleets/1/edit
   def edit
     @fleet = Fleet.find(params[:id])
   end
 
-  # POST /fleets
-  # POST /fleets.json
   def create
     @fleet = Fleet.new(params[:fleet])
 
@@ -53,8 +58,6 @@ class FleetsController < ApplicationController
     end
   end
 
-  # PUT /fleets/1
-  # PUT /fleets/1.json
   def update
     @fleet = Fleet.find(params[:id])
 
@@ -69,8 +72,6 @@ class FleetsController < ApplicationController
     end
   end
 
-  # DELETE /fleets/1
-  # DELETE /fleets/1.json
   def destroy
     @fleet = Fleet.find(params[:id])
 

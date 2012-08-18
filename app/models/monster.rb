@@ -2,6 +2,8 @@ class Monster < ActiveRecord::Base
   has_attached_file :image, :styles => { :medium => "300x300>", :thumb => "100x100>" }
   attr_accessible :description, :name, :image, :fleet_id
 
+  validates_uniqueness_of :name
+
   validates_length_of :name, :in => (5..20)
   validates_length_of :description, :in => (10..30)
   validates_presence_of :fleet_id

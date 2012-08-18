@@ -1,5 +1,29 @@
 class MonstersController < ApplicationController
 
+  def webcam
+    @monster = Monster.find(params[:id])
+
+    fname = File.join(Rails.root,'public','uploads',"#{SecureRandom.hex}.jpg");
+    File.open(fname, 'w') do |f|
+      f.write request.raw_post.force_encoding("UTF-8")
+    end
+    @monster.image = File.new(fname)
+    @monster.save
+    File.unlink(fname)
+    render :text => params[:id]
+  end
+
+  def upload
+    File.open(upload_path, 'w') do |f|
+      f.write request.raw_post.force_encoding("UTF-8")
+    end
+    render :text => "ok"
+  end
+
+  def photo
+    @monster = Monster.new
+  end
+
   def app
     @monster = Monster.new
   end
@@ -72,4 +96,12 @@ class MonstersController < ApplicationController
       format.json { head :no_content }
     end
   end
+
+  private
+
+  def upload_path(id) # is used in upload and create
+    file_name = session[:session_id].to_s + '.jpg'
+    File.join(Rails.root, 'public', 'uploads', file_name)
+  end
+
 end
