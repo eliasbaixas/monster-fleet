@@ -111,7 +111,7 @@ window.MonsterView = Backbone.View.extend({
       var templ = _.template($('#monster-file-template').html());
       $(ev.currentTarget).html(templ({id : id}));
       var myself=this;
-      $(ev.currentTarget).find('form').ajaxForm(function() { myself.fetch(); }); 
+      $(ev.currentTarget).find('form').ajaxForm(function() { myself.model.fetch(); }); 
       $(this.el).trigger("monsters.form_added");
     }
   },
@@ -194,7 +194,7 @@ window.FleetView = Backbone.View.extend({
     var templ = _.template($('#fleet-file-template').html());
     $(ev.currentTarget).html(templ({id : id}));
     var myself=this;
-    $(ev.currentTarget).find('form').ajaxForm(function(){ myself.fetch(); }); 
+    $(ev.currentTarget).find('form').ajaxForm(function(){ myself.model.fetch(); }); 
     $(this.el).trigger("monsters.form_added");
   },
   on_focus: function(ev){
