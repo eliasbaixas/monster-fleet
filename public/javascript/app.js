@@ -20,7 +20,7 @@ $(document).ready(function(){
 
   function fetch_monsters(){
     monsters.fetch({
-      fleets: window.fleets,
+      fleet_collection: window.fleets,
       error: function(col,resp){
         console.log('error:');
         console.log(resp);
@@ -36,7 +36,7 @@ $(document).ready(function(){
 });
 
 function new_monster(){
-  var m = new Monster({name : "Cambiame", description : "Descriptción estandard", image_url : "/images/thumb/missing.png"}, {fleets:window.fleets});
+  var m = new Monster({name : "Cambiame", description : "Descriptción estandard", image_url : "/images/thumb/missing.png"}, {fleet_collection:window.fleets});
   monsters.add(m);
   var mv = new MonsterView({model:m});
 }

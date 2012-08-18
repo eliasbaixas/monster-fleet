@@ -21,12 +21,20 @@
 <script type="text/template" id="monster-template">
   <div class="well monster  {% if(!isValid()){ %} has_errors {% } %}">
     <span class="destroy">X</span>
-    <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
-    <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
-    <div class='imgeditable editable' data="{= get('id') =}">
-      <img data="image_url" src='{= get('image_url') =}'></img>
+    <div class="editable-holder">
+        <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
     </div>
-    <div class="my_fleet">
+    <div class="editable-holder">
+        <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+    </div>
+    <div class="editable-holder">
+        <div class='imgeditable editable' data="{= get('id') =}">
+            <img data="image_url" src='{= get('image_url') =}'></img>
+        </div>
+    </div>
+    <div class="editable-holder">
+        <div class="my_fleet">
+        </div>
     </div>
   </div>
 </script>
@@ -51,11 +59,19 @@
 <script type="text/template" id="fleet-template">
 <div class="well fleet  {% if(!isValid()){ %} has_errors {% } %}" style="background-color:#{= get('color') =}">
     <span class="destroy">X</span>
-    <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
-    <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
-    <p>#<strong contentEditable='true' data="color" class='color editable'>{= get('color') =}</strong></p>
-    <div class='imgeditable editable' data="{= get('id') =}">
-      <img data="image_url" src='{= get('image_url') =}'></img>
+    <div class="editable-holder">
+        <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
+    </div>
+    <div class="editable-holder">
+        <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+    </div>
+    <div class="editable-holder">
+        <p>#<strong contentEditable='true' data="color" class='color editable'>{= get('color') =}</strong></p>
+    </div>
+    <div class="editable-holder">
+        <div class='imgeditable editable' data="{= get('id') =}">
+            <img data="image_url" src='{= get('image_url') =}'></img>
+        </div>
     </div>
   </div>
 </script>

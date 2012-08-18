@@ -31,37 +31,40 @@ window.BasicResource = Backbone.Model.extend({
   }
 
 });
+
 window.Monster = BasicResource.extend({
   initialize: function(attrs,opts){
-    this.fleets = opts.fleets;
-    this.on("error", function(model, error) {
-      console.log(error);
-      return true;
-    });
-    if(this.fleets.models.length > 0){
-      var fl;
-      if(this.get('fleet_id')){
-        fl = find_fleet(this.fleets, this.get('fleet_id'));
-      }else if(this.fleets.models.length > 0){
-        fl=this.fleets.models[0];
-        this.set('fleet_id',fl.get('id'));
-      }
-      var myself = this;
-      fl.on("change",function(model,err){
-        myself.trigger('change');
-      })
-      this.set('fleet',fl);
+    this.fleet_collection = opts.fleet_collection;
+
+    if(this.fleet_collection.models.length == 0){
+      return;
     }
+    var my_fleet;
+    if(this.get('fleet_id')){
+      my_fleet = find_fleet(this.fleet_collection, this.get('fleet_id'));
+    } else if(this.fleet_collection.models.length > 0){
+      my_fleet=this.fleet_collection.models[0];
+      this.set('fleet_id',my_fleet.get('id'));
+    }
+    var myself = this;
+    my_fleet.on("change",function(model,err){
+      myself.trigger('change');
+    })
+    this.set('fleet',my_fleet);
   }, 
-    validate: function(attrs) {
-      var msg = this.validates_presence_of('name',attrs) ||
-        this.validates_length_of('name',attrs,5,20) ||
-        this.validates_presence_of('description',attrs) ||
-        this.validates_length_of('description',attrs,10,30) ||
-        this.validates_presence_of('fleet_id',attrs);
-      if(msg)
-        return msg;
+  validate: function(attrs) {
+    if(window.no_client_validations){
+      return ;
     }
+    var msg = this.validates_presence_of('name',attrs) ||
+      this.validates_length_of('name',attrs,5,20) ||
+      this.validates_presence_of('description',attrs) ||
+      this.validates_length_of('description',attrs,10,30) ||
+      this.validates_presence_of('fleet_id',attrs);
+    if(msg){
+      return msg;
+    }
+  }
 });
 
 window.MonsterCollection = Backbone.Collection.extend({
@@ -77,6 +80,9 @@ window.Fleet = BasicResource.extend({
     });
   }, 
   validate: function(attrs) {
+    if(window.no_client_validations){
+      return ;
+    }
     var msg = this.validates_presence_of('name',attrs) ||
   this.validates_length_of('name',attrs,5,20) ||
   this.validates_presence_of('description',attrs) ||
@@ -108,7 +114,8 @@ function find_fleet(fleets, id){
 
 window.MyBasicView = Backbone.View.extend({
   destroy_me: function() {
-    $(myself.el).addClass('spinning');
+    var myself = this;
+    $(this.el).addClass('spinning');
     this.model.destroy({
       wait : true,
       success : function(model,resp){
@@ -122,12 +129,27 @@ window.MyBasicView = Backbone.View.extend({
   change: function(ev){
     if(this.before == $(ev.currentTarget).text())
       return;
+    var myself=this;
     var txt = $(ev.currentTarget).text();
     var which = $(ev.currentTarget).attr('data');
     if(this.model.set(which,txt)){
-      var xhr;
-      if(xhr=this.model.save()){
-        console.log("server says:");console.log(xhr);
+      var xhr=this.model.save(null,{wait:true,
+        success:function(model,resp){
+          console.log("Succeed!");
+          var ele = $(myself.el).find('.'+nam+'[contentEditable=true]').closest('.editable-holder');
+          },
+        error:function(model,resp){
+          console.log("server says:");
+          console.log(resp.responseText);
+          var json = JSON.parse(resp.responseText);
+          for(var nam in json){
+            var ele = $(myself.el).find('.'+nam+'.editable-holder');
+            ele.addClass('server_errors');
+            ele.append('<div class="server_error">'+nam+' '+json[nam]+'</div>');
+          }
+        }
+      });
+      if(xhr){
         $(ev.currentTarget).removeClass('has_errors');
       }
     }else{
@@ -178,7 +200,7 @@ window.MonsterView = MyBasicView.extend({
       var xhr;
       if(xhr=this.model.save()){
         console.log("server says:");console.log(xhr);
-        this.model.set('fleet',find_fleet(this.model.fleets, iid));
+        this.model.set('fleet',find_fleet(this.model.fleet_collection, iid));
         this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
         this.fleet_view.on('changed_fleet',changed_fleet_ev_handler,this);
         this.render();
@@ -262,10 +284,9 @@ window.FleetView = MyBasicView.extend({
   destroy_me: function() {
     var myid=this.model.get('id');
     var myself=this;
-/*    if(window.monsters.some(function(monster){ if(monster.get('fleet_id') == myid) return true;})){
+    if(!window.no_client_validations && window.check_window.monsters.some(function(monster){ if(monster.get('fleet_id') == myid) return true;})){
       return;
     }
-    */
     $(myself.el).addClass('spinning');
     this.model.destroy({
       wait : true,

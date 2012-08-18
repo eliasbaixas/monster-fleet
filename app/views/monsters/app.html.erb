@@ -40,13 +40,13 @@
     webcam.set_shutter_sound(true, '/shutter.mp3');
 </script>
 
-</script>
 <ul>
   <li>A Fleet has many Monsters, so Monster belongs to a Fleet.</li>
   <li>You can edit Fleets and Monsters attributes in-line, just click on the attribute you want to change.</li>
   <li>When you change any attribute on a Fleet, the views on monsters should be automatically updated as well.</li>
   <li>You can only destroy Fleets that have no monsters (validation is don on client and on server).</li>
   <li>Validations for attributes are done on client as well as on server side.</li>
+  <li><input type="checkbox" checked="true" onchange="window.no_client_validations = !!!window.no_client_validations"></input> Perform Client Validations (vs. Server validations only)</li>
 </ul>
 
 <div class="span4">
@@ -61,14 +61,22 @@
 </div>
 
 <script type="text/template" id="monster-template">
-  <div class="well monster  {% if(!isValid()){ %} has_errors {% } %}">
+  <div class="well monster {% if(!isValid()){ %} has_errors {% } %} {% if(isNew()){ %} is_new {% } %}">
     <span class="destroy">X</span>
-    <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
-    <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
-    <div class='imgeditable editable' data="{= get('id') =}">
-      <img data="image_url" src='{= get('image_url') =}'></img>
+    <div class="editable-holder name">
+      <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
     </div>
-    <div class="my_fleet">
+    <div class="editable-holder description">
+      <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+    </div>
+    <div class="editable-holder image">
+      <div class='imgeditable editable' data="{= get('id') =}">
+        <img data="image_url" src='{= get('image_url') =}'></img>
+      </div>
+    </div>
+    <div class="editable-holder fleet_id">
+      <div class="my_fleet">
+      </div>
     </div>
   </div>
 </script>
@@ -83,7 +91,7 @@
 
 <script type="text/template" id="fleet-multi-template">
   <h4>Select the fleet to which this moster belongs</h4>
-  {% _.each(models, function(fleet){  %}
+  {% _.each(models, function(fleet){ if(fleet.isNew())return; %}
     <div data="{= fleet.get('id') =}" class="many_fleet fleet" style="background-color:#{= fleet.get('color') =}">
       <img style="width:30px;height:30px;" src='{= fleet.get('image_url') =}'></img>
       <bold class='name inline'>{= fleet.get('name') =}</bold>
@@ -92,13 +100,21 @@
 </script>
 
 <script type="text/template" id="fleet-template">
-<div class="well fleet  {% if(!isValid()){ %} has_errors {% } %}" style="background-color:#{= get('color') =}">
+  <div class="well fleet  {% if(!isValid()){ %} has_errors {% } %} {% if(isNew()){ %} is_new {% } %}" style="background-color:#{= get('color') =}">
     <span class="destroy">X</span>
-    <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
-    <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
-    <p>#<strong contentEditable='true' data="color" class='color editable'>{= get('color') =}</strong></p>
-    <div class='imgeditable editable' data="{= get('id') =}">
-      <img data="image_url" src='{= get('image_url') =}'></img>
+    <div class="editable-holder name">
+      <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
+    </div>
+    <div class="editable-holder description">
+      <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+    </div>
+    <div class="editable-holder color">
+      <p>#<strong contentEditable='true' data="color" class='color editable'>{= get('color') =}</strong></p>
+    </div>
+    <div class="editable-holder image">
+      <div class='imgeditable editable' data="{= get('id') =}">
+        <img data="image_url" src='{= get('image_url') =}'></img>
+      </div>
     </div>
   </div>
 </script>

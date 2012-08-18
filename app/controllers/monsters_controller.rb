@@ -88,8 +88,9 @@ class MonstersController < ApplicationController
   end
 
   def destroy
-    @monster = Monster.find(params[:id])
-    @monster.destroy
+    if @monster = Monster.where(:id => params[:id]).first
+      @monster.destroy
+    end
 
     respond_to do |format|
       format.html { redirect_to monsters_url }
