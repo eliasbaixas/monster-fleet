@@ -245,7 +245,9 @@ window.FleetMiniView = Backbone.View.extend({
   template: _.template($('#fleet-mini-template').html()),
   template_multi: _.template($('#fleet-multi-template').html()),
   initialize: function() {
-    this.model.bind('change', this.render, this);
+    if(this.model){
+      this.model.bind('change', this.render, this);
+    }
   },
   events: {
     'click div.one_fleet': 'expand',
@@ -257,7 +259,7 @@ window.FleetMiniView = Backbone.View.extend({
     this.trigger('changed_fleet', iid);
   },
   expand: function(ev){
-    if(this.expanded)
+    if(this.expanded || window.fleets.models.length == 0)
       return;
     this.expanded = true;
     this.render();
@@ -266,8 +268,7 @@ window.FleetMiniView = Backbone.View.extend({
     if(this.expanded){
       $(this.el).html(this.template_multi(window.fleets));
     }else{
-      var data = this.model;
-      $(this.el).html(this.template(data));
+      $(this.el).html(this.template(this));
     }
     this.delegateEvents(this.events);
     return this;

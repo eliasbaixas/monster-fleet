@@ -59,7 +59,7 @@
     <li>When you change any attribute on a Fleet, the views on monsters should be automatically updated as well.</li>
     <li>You can only destroy Fleets that have no monsters (validation is don on client and on server).</li>
     <li>Validations for attributes are done on client as well as on server side.</li>
-    <li style="border:2px solid red;">Client-side errors are highlighted in red.</li>
+    <li style="border:2px solid red;">Client-side validation errors are highlighted in red.</li>
     <li style="border:2px solid #00ff00;">Server-side errors are highlighted in green.</li>
     <li><input type="checkbox" checked="true" onchange="window.do_client_validations = !window.do_client_validations"></input> Perform Client Validations (vs. Server validations only)</li>
   </ul>
@@ -87,11 +87,17 @@
 </script>
 
 <script type="text/template" id="fleet-mini-template">
-  <h4>Belongs to fleet:</h4>
-  <div class="one_fleet fleet" style="background-color:#{= get('color') =}">
-    <img style="width:30px;height:30px;" src='{= get('image_url') =}'></img>
-    <bold class='name inline'>{= get('name') =}</bold>
+  {% if(typeof(model) == 'undefined'){ %} 
+    <div class="one_fleet">
+      <h4>Has no fleet</h4>
+    </div>
+  {% } else { %}
+  <div class="one_fleet fleet" style="background-color:#{= model.get('color') =}">
+    <h4>Belongs to fleet:</h4>
+    <img style="width:30px;height:30px;" src='{= model.get('image_url') =}'></img>
+    <bold class='name inline'>{= model.get('name') =}</bold>
   </div>
+  {% } %}
 </script>
 
 <script type="text/template" id="fleet-multi-template">
