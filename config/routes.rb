@@ -9,10 +9,6 @@ MonsterFleet::Application.routes.draw do
     member do
       post :webcam
     end
-    collection do
-      get :photo
-      post :upload
-    end
   end
 
   root :to => 'monsters#app'

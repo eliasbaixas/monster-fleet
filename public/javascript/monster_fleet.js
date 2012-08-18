@@ -1,4 +1,4 @@
-window.BasicResource = Backbone.Model.extend({
+window.BaseModel = Backbone.Model.extend({
   validates_presence_of : function(name,attrs){
     if(!attrs[name]){
        return (name+" attribute must be present.");
@@ -7,16 +7,16 @@ window.BasicResource = Backbone.Model.extend({
   },
   validates_length_of : function(name,attrs,min,max){
     if(min && attrs[name].length < min){
-       return name+" must be shorter than " + min + " characters.";
+       return name+" must be longer than " + min + " characters.";
     }
     if(max && attrs[name].length > max){
-       return name+" must be longer than " + max + " characters.";
+       return name+" must be shorter than " + max + " characters.";
     }
     return false;
   },
   validates_format_of : function(name,attrs,regex){
     if(!attrs[name].match(regex)){
-       return name+" is not well-formed (must match "+regex+")"
+       return name+" is not well-formed (must match "+regex+")."
     }
     return false;
   },
@@ -32,7 +32,7 @@ window.BasicResource = Backbone.Model.extend({
 
 });
 
-window.Monster = BasicResource.extend({
+window.Monster = BaseModel.extend({
   initialize: function(attrs,opts){
     this.fleet_collection = opts.fleet_collection;
 
@@ -74,7 +74,7 @@ window.MonsterCollection = Backbone.Collection.extend({
   url: 'monsters',
 });
 
-window.Fleet = BasicResource.extend({
+window.Fleet = BaseModel.extend({
   initialize: function(){
     this.on("error", function(model, error) {
       console.log(error);
@@ -316,5 +316,3 @@ window.FleetView = MyBasicView.extend({
     return this;
   }
 });
-
-

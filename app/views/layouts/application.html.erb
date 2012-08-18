@@ -29,7 +29,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </a>
-        <a class="brand" href="#">Monster Fleet Management</a>
+        <a class="brand" href="/">Monster Fleet Management</a>
         <div class="nav-collapse">
           <p class="navbar-text pull-right">Management</p>
         </div>
@@ -41,18 +41,17 @@
     <div class="span3">
       <div class="well sidebar-nav">
         <ul class="nav nav-list">
-          <li class="nav-header">
-            <ul class="nav nav-list">Uno</ul>
-            <ul class="nav nav-list">Dos</ul>
-            <ul class="nav nav-list">Tres</ul>
-          </ul>
-        </div>
+          <li class="nav nav-list"><%= link_to "Unit Tests", "/jasmine.html" %></li>
+          <li class="nav nav-list"><%= link_to "Monsters CRUD", "/monsters" %></li>
+          <li class="nav nav-list"><%= link_to "Fleet CRUD", "/fleets" %></li>
+        </ul>
       </div>
-
-      <div class="span9">
-        <%= yield %>
-      </div>
-
     </div>
 
-  </body>
+    <div>
+      <%= yield %>
+    </div>
+
+  </div>
+
+</body>

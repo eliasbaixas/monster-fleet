@@ -41,17 +41,6 @@
     webcam.set_shutter_sound(true, '/shutter.mp3');
 </script>
 
-<ul>
-  <li>A Fleet has many Monsters, so Monster belongs to a Fleet.</li>
-  <li>You can edit Fleets and Monsters attributes in-line, just click on the attribute you want to change.</li>
-  <li>When you change any attribute on a Fleet, the views on monsters should be automatically updated as well.</li>
-  <li>You can only destroy Fleets that have no monsters (validation is don on client and on server).</li>
-  <li>Validations for attributes are done on client as well as on server side.</li>
-  <li style="border:2px solid red;">Client-side errors are highlighted in red.</li>
-  <li style="border:2px solid #00ff00;">Server-side errors are highlighted in green.</li>
-  <li><input type="checkbox" checked="true" onchange="window.do_client_validations = !window.do_client_validations"></input> Perform Client Validations (vs. Server validations only)</li>
-</ul>
-
 <div class="span4">
   <h1>Fleets</h1>
   <div id="fleets"> </div>
@@ -61,6 +50,19 @@
   <h1>Monsters</h1>
   <div id="monsters"> </div>
   <%= button_to_function "New Monster", "new_monster();", :class => "btn-primary btn-large" %>
+</div>
+
+<div class="span4">
+  <ul>
+    <li>A Fleet has many Monsters, so Monster belongs to a Fleet.</li>
+    <li>You can edit Fleets and Monsters attributes in-line, just click on the attribute you want to change.</li>
+    <li>When you change any attribute on a Fleet, the views on monsters should be automatically updated as well.</li>
+    <li>You can only destroy Fleets that have no monsters (validation is don on client and on server).</li>
+    <li>Validations for attributes are done on client as well as on server side.</li>
+    <li style="border:2px solid red;">Client-side errors are highlighted in red.</li>
+    <li style="border:2px solid #00ff00;">Server-side errors are highlighted in green.</li>
+    <li><input type="checkbox" checked="true" onchange="window.do_client_validations = !window.do_client_validations"></input> Perform Client Validations (vs. Server validations only)</li>
+  </ul>
 </div>
 
 <script type="text/template" id="monster-template">

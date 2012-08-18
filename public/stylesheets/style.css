@@ -4,7 +4,8 @@
 .server_errors { border: 2px solid #00FF00; }
 .has_errors { border: 2px solid red; }
 .is_new { opacity: .6; }
-.monster .name {
+.color { float: right; }
+.name {
   min-width: 10px;
   display: inline-block;
 }

@@ -1,5 +1,8 @@
 class MonstersController < ApplicationController
 
+  def app
+  end
+
   def webcam
     @monster = Monster.find(params[:id])
 
@@ -11,21 +14,6 @@ class MonstersController < ApplicationController
     @monster.save
     File.unlink(fname)
     render :text => params[:id]
-  end
-
-  def upload
-    File.open(upload_path, 'w') do |f|
-      f.write request.raw_post.force_encoding("UTF-8")
-    end
-    render :text => "ok"
-  end
-
-  def photo
-    @monster = Monster.new
-  end
-
-  def app
-    @monster = Monster.new
   end
 
   def index

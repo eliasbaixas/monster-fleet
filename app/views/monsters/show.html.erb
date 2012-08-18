@@ -1,20 +1,22 @@
-<p id="notice"><%= notice %></p>
+<div class="span6">
+  <p id="notice"><%= notice %></p>
+  <p>
+    <b>Name:</b>
+    <%= @monster.name %>
+  </p>
+  <p>
+    <b>Image :</b>
+    <%= image_tag @monster.image.url(:medium) %>
+  </p>
+  <p>
+    <b>Description:</b>
+    <%= @monster.description %>
+  </p>
+  <p>
+    <b>Fleet:</b>
+    <%= link_to @monster.try(:fleet).try(:name), fleet_path(@monster.fleet)  %>
+  </p>
 
-<p>
-  <b>Name:</b>
-  <%= @monster.name %>
-</p>
-
-<p>
-  <b>Image :</b>
-  <%= image_tag @monster.image.url(:medium) %>
-</p>
-
-<p>
-  <b>Description:</b>
-  <%= @monster.description %>
-</p>
-
-
-<%= link_to 'Edit', edit_monster_path(@monster) %> |
-<%= link_to 'Back', monsters_path %>
+  <%= link_to 'Edit', edit_monster_path(@monster) %> |
+  <%= link_to 'Back', monsters_path %>
+</div>

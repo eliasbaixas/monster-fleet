@@ -9,7 +9,7 @@ class Fleet < ActiveRecord::Base
 
   validates_length_of :name, :in => (5..20)
   validates_length_of :description, :in => (10..30)
-  validates_format_of :color, :with => /[a-fA-F0-9]{6}/
+  validates_format_of :color, :with => /^[a-fA-F0-9]{6}$/
 
   before_destroy :check_no_monsters_left
 
