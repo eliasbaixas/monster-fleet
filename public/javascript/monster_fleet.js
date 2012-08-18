@@ -47,9 +47,11 @@ window.Monster = BasicResource.extend({
       this.set('fleet_id',my_fleet.get('id'));
     }
     var myself = this;
-    my_fleet.on("change",function(model,err){
-      myself.trigger('change');
-    })
+    if(my_fleet){
+      my_fleet.on("change",function(model,err){
+        myself.trigger('change');
+      })
+    }
     this.set('fleet',my_fleet);
   }, 
   validate: function(attrs) {
@@ -170,7 +172,9 @@ window.MyBasicView = Backbone.View.extend({
       success : function(){
         myedit.removeClass('spinning');
         myself.model.fetch({
-          error:function(model,resp){ console.log("error:");console.log(resp);}
+          error:function(model,resp){
+            console.log("error:");
+            console.log(resp);}
           });
       },
       error : function(ev){
@@ -193,17 +197,27 @@ window.MonsterView = MyBasicView.extend({
     this.model.bind('destroy', this.remove, this);
 
     this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
+    var myself=this;
     function changed_fleet_ev_handler(iid){
       this.model.set('fleet_id',iid);
-      var xhr;
-      if(xhr=this.model.save()){
-        console.log("server says:");console.log(xhr);
-        this.model.set('fleet',find_fleet(this.model.fleet_collection, iid));
-        this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
-        this.fleet_view.on('changed_fleet',changed_fleet_ev_handler,this);
-        this.render();
-      }else{
-      }
+      var xhr=this.model.save(null,{
+        wait : true ,
+          success: function(model,resp){
+            model.set('fleet',find_fleet(model.fleet_collection, iid));
+            myself.fleet_view = new FleetMiniView({model:model.get('fleet')});
+            myself.fleet_view.on('changed_fleet',changed_fleet_ev_handler,myself);
+            myself.render();
+          },
+          error:function(model,resp){
+            var json = JSON.parse(resp.responseText);
+            for(var nam in json){
+              var ele = $(myself.el).find('.'+nam+'.editable-holder');
+              ele.addClass('server_errors');
+              ele.find('.server_error').remove();
+              ele.append('<div class="server_error">'+nam+' '+json[nam]+'</div>');
+            }
+          }
+      });
     }
     this.fleet_view.on('changed_fleet',changed_fleet_ev_handler,this);
     
@@ -247,7 +261,6 @@ window.FleetMiniView = Backbone.View.extend({
       return;
     this.expanded = true;
     this.render();
-    console.log('expanded');
   },
   render: function() {
     if(this.expanded){

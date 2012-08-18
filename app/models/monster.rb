@@ -7,6 +7,7 @@ class Monster < ActiveRecord::Base
   validates_length_of :name, :in => (5..20)
   validates_length_of :description, :in => (10..30)
   validates_presence_of :fleet_id
+  validates_presence_of :fleet, :message => "does longer not exist"
 
   belongs_to :fleet
 
