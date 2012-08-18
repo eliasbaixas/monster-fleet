@@ -1,0 +1,8 @@
+<h4>Select the fleet to which this moster belongs</h4>
+{% _.each(models, function(fleet){ if(fleet.isNew())return; %}
+        <div data="{= fleet.get('id') =}" class="many_fleet fleet" style="background-color:#{= fleet.get('color') =}">
+        <img style="width:30px;height:30px;" src='{= fleet.get('image_url') =}'></img>
+        <bold class='name inline'>{= fleet.get('name') =}</bold>
+        </div>
+        {% }); %}
+

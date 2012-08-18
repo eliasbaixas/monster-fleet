@@ -1,0 +1,10 @@
+<div class="webcam_holder">
+</div>
+<input class="shoot" type="button" value="Take picture" onclick="do_snapshot(event,'{= resources =}','{= id =}');"/>
+<hr/>
+<form action='/{= resources =}/{= id =}' method="post" enctype="multipart/form-data">
+<input name="_method" type="hidden" value="put"/>
+<input name="{= resource =}[image]" type="file"/>
+<input name="commit" type="submit" value="Update {= resource =}" class="btn-primary"/>
+</form>
+

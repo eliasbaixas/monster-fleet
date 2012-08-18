@@ -114,7 +114,38 @@ function find_fleet(fleets, id){
   return null;
 }
 
-window.MyBasicView = Backbone.View.extend({
+window.TemplateLoadingView = Backbone.View.extend({
+  initialize: function() {
+    var self = this;
+    var templates = [];
+    for(var t in this.templates){
+      if(this.templates.hasOwnProperty(t)){
+        templates << t;
+      }
+    }
+    for(var t in this.templates){
+      if(typeof(this.templates[t]) == "string"){
+        var name = t;
+        $.get($(this.templates[t]).attr('src'),function(data,responseText,jqXHR){
+          self.templates[name] = _.template(data);
+          var i = templates.indexOf(name);
+          templates.splice(i,1);
+          if(templates.length==0){
+            self.templates_loaded = true;
+            self.trigger("templates_loaded");
+            console.log("DEL PARAGUAY");
+          }
+        });
+        delete this.templates[t];
+      }
+    }
+  }
+});
+
+window.MyBasicView = TemplateLoadingView.extend({
+  initialize : function(){
+    TemplateLoadingView.prototype.initialize.call(this);
+  },
   destroy_me: function() {
     var myself = this;
     $(this.el).addClass('spinning');
@@ -164,8 +195,8 @@ window.MyBasicView = Backbone.View.extend({
       return true;
     }
     var id = parseInt($(ev.currentTarget).attr('data'));
-    var templ = _.template($('#file-template').html());
-    $(ev.currentTarget).html(templ({id : id, resource : this.resource, resources : this.resources}));
+    /*var templ = _.template($('#file-template').html());*/
+    $(ev.currentTarget).html(this.templates.file({id : id, resource : this.resource, resources : this.resources}));
     var myself=this;
     var myedit=$(this.el).find('.imgeditable');
     $(ev.currentTarget).find('form').ajaxForm({
@@ -187,12 +218,13 @@ window.MyBasicView = Backbone.View.extend({
     }); 
     $(this.el).trigger("monsters.form_added");
   }
-});
+},{elias : 1});
 
 window.MonsterView = MyBasicView.extend({
   resource:"monster",
   resources:"monsters",
   initialize: function() {
+    MyBasicView.prototype.initialize.call(this);
     this.model.bind('change', this.render, this);
     this.model.bind('destroy', this.remove, this);
 
@@ -221,9 +253,16 @@ window.MonsterView = MyBasicView.extend({
     }
     this.fleet_view.on('changed_fleet',changed_fleet_ev_handler,this);
     
-    $('#monsters').append(this.render().el);
+    if(this.templates_loaded){
+      $('#monsters').append(this.render().el);
+    }else{
+      this.on('templates_loaded',function(){
+        $('#monsters').append(this.render().el);
+      },this);
+    }
   },
-  template: _.template($('#monster-template').html()),
+  templates : { monster_template : "#monster-template", file: '#file-template' },
+  /*template: _.template($('#monster-template').html()),*/
   tag: 'div',
   className: 'a-monster',
   events: {
@@ -235,16 +274,19 @@ window.MonsterView = MyBasicView.extend({
   render: function() {
     var data = this.model;
     data.fleet_view = this.fleet_view;
-    $(this.el).html(this.template(data));
+    if(this.templates.monster_template)
+      $(this.el).html(this.templates.monster_template(data));
     $(this.el).find('.my_fleet').html(this.fleet_view.render().el);
     return this;
   },
 });
 
-window.FleetMiniView = Backbone.View.extend({
-  template: _.template($('#fleet-mini-template').html()),
-  template_multi: _.template($('#fleet-multi-template').html()),
+window.FleetMiniView = TemplateLoadingView.extend({
+  templates : { mini : "#fleet-mini-template", multi : "#fleet-multi-template", file: '#file-template' },
+/* template: _.template($('#fleet-mini-template').html()),
+  template_multi: _.template($('#fleet-multi-template').html()),*/
   initialize: function() {
+    TemplateLoadingView.prototype.initialize.call(this);
     this.model.bind('change', this.render, this);
   },
   events: {
@@ -264,10 +306,10 @@ window.FleetMiniView = Backbone.View.extend({
   },
   render: function() {
     if(this.expanded){
-      $(this.el).html(this.template_multi(window.fleets));
+      $(this.el).html(this.templates.multi(window.fleets));
     }else{
       var data = this.model;
-      $(this.el).html(this.template(data));
+      $(this.el).html(this.templates.mini(data));
     }
     this.delegateEvents(this.events);
     return this;
@@ -275,9 +317,19 @@ window.FleetMiniView = Backbone.View.extend({
 })
 
 window.FleetView = MyBasicView.extend({
+  initialize: function() {
+    MyBasicView.prototype.initialize.call(this);
+    this.model.bind('change', this.render, this);
+    this.model.bind('destroy', this.remove, this);
+
+    this.on('templates_loaded',function(){
+      $('#fleets').append(this.render().el);
+    },this)
+  },
   resource:"fleet",
   resources:"fleets",
-  template: _.template($('#fleet-template').html()),
+  templates: { fleet:'#fleet-template' },
+/*  template: _.template($('#fleet-template').html()),*/
   tag: 'ul',
   className: 'a-fleet',
   events: {
@@ -285,12 +337,6 @@ window.FleetView = MyBasicView.extend({
     'blur [contentEditable]' : "change",
     'click span.destroy': 'destroy_me',
     'click .fleet .imgeditable' : 'change_img'
-  },
-  initialize: function() {
-    this.model.bind('change', this.render, this);
-    this.model.bind('destroy', this.remove, this);
-
-    $('#fleets').append(this.render().el);
   },
   destroy_me: function() {
     var myid=this.model.get('id');
@@ -312,7 +358,7 @@ window.FleetView = MyBasicView.extend({
   },
   render: function() {
     var data = this.model;
-    $(this.el).html(this.template(data));
+    $(this.el).html(this.templates.fleet(data));
     return this;
   }
 });

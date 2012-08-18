@@ -1,0 +1,6 @@
+  <h4>Belongs to fleet:</h4>
+  <div class="one_fleet fleet" style="background-color:#{= get('color') =}">
+    <img style="width:30px;height:30px;" src='{= get('image_url') =}'></img>
+    <bold class='name inline'>{= get('name') =}</bold>
+  </div>
+

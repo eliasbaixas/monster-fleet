@@ -1,0 +1,18 @@
+  <div class="well fleet  {% if(!isValid()){ %} has_errors {% } %} {% if(isNew()){ %} is_new {% } %}" style="background-color:#{= get('color') =}">
+    <span class="destroy">X</span>
+    <div class="editable-holder name">
+      <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
+    </div>
+    <div class="editable-holder description">
+      <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+    </div>
+    <div class="editable-holder color">
+      <p>#<strong contentEditable='true' data="color" class='color editable'>{= get('color') =}</strong></p>
+    </div>
+    <div class="editable-holder image">
+      <div class='imgeditable editable' data="{= get('id') =}">
+        <img data="image_url" src='{= get('image_url') =}'></img>
+      </div>
+    </div>
+  </div>
+

@@ -1,0 +1,20 @@
+  <div class="well monster {% if(!isValid()){ %} has_errors {% } %} {% if(isNew()){ %} is_new {% } %}">
+    <span class="destroy">X</span>
+    <div class="editable-holder name">
+      <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
+    </div>
+    <div class="editable-holder description">
+      <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+    </div>
+    <div class="editable-holder image">
+      <div class='imgeditable editable' data="{= get('id') =}">
+        <img data="image_url" src='{= get('image_url') =}'></img>
+      </div>
+    </div>
+    <div class="editable-holder fleet_id fleet">
+      <div class="my_fleet">
+      </div>
+    </div>
+  </div>
+
+
