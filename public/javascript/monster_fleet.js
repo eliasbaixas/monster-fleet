@@ -1,4 +1,37 @@
-window.Monster = Backbone.Model.extend({
+window.BasicResource = Backbone.Model.extend({
+  validates_presence_of : function(name,attrs){
+    if(!attrs[name]){
+       return name+" attribute must be present.";
+    }
+    return false;
+  },
+  validates_length_of : function(name,attrs,min,max){
+    if(min && attrs[name].length < min){
+       return name+" must be shorter than " + min + " characters.";
+    }
+    if(max && attrs[name].length > max){
+       return name+" must be longer than " + max + " characters.";
+    }
+    return false;
+  },
+  validates_format_of : function(name,attrs,regex){
+    if(!attrs[name].match(regex)){
+       return name+" is not well-formed (must match "+regex+")"
+    }
+    return false;
+  },
+  validates_uniqueness_of : function(name,attrs,collection,getter){
+    for(var i in collection){
+      if(collection[i] == this)
+        continue;
+      if(getter(collection[i]).toUpperCase() == attrs[name].toUpperCase())
+        return name+" must be unique."
+    }
+    return false;
+  }
+
+});
+window.Monster = BasicResource.extend({
   initialize: function(attrs,opts){
     this.fleets = opts.fleets;
     this.on("error", function(model, error) {
@@ -20,16 +53,15 @@ window.Monster = Backbone.Model.extend({
       this.set('fleet',fl);
     }
   }, 
-validate: function(attrs) {
-  if(!attrs.name)
-  return "A Name must be given to the monster.";
-if(attrs.name.length < 5 || attrs.name.length > 20)
-  return "The monsters name must be within 5 and 10 characters long";
-if(!attrs.description)
-  return "A Description must be given to the monster.";
-if(attrs.description.length < 10 || attrs.description.length > 30)
-  return "The monsters description must be within 5 and 10 characters long";
-}
+    validate: function(attrs) {
+      var msg = this.validates_presence_of('name',attrs) ||
+        this.validates_length_of('name',attrs,5,20) ||
+        this.validates_presence_of('description',attrs) ||
+        this.validates_length_of('description',attrs,10,30) ||
+        this.validates_presence_of('fleet_id',attrs);
+      if(msg)
+        return msg;
+    }
 });
 
 window.MonsterCollection = Backbone.Collection.extend({
@@ -37,25 +69,24 @@ window.MonsterCollection = Backbone.Collection.extend({
   url: 'monsters',
 });
 
-window.Fleet = Backbone.Model.extend({
+window.Fleet = BasicResource.extend({
   initialize: function(){
     this.on("error", function(model, error) {
       console.log(error);
       return true;
     });
   }, 
-validate: function(attrs) {
-  if(!attrs.name)
-    return "A Name must be given to the monster.";
-  if(attrs.name.length < 5 || attrs.name.length > 20)
-    return "The monsters name must be within 5 and 10 characters long";
-  if(!attrs.description)
-    return "A Description must be given to the monster.";
-  if(attrs.description.length < 10 || attrs.description.length > 30)
-    return "The monsters description must be within 5 and 10 characters long";
-  if(!attrs.color || !attrs.color.match(/[a-fA-F0-9]{6}/))
-    return "Color must be in HEX";
-}
+  validate: function(attrs) {
+    var msg = this.validates_presence_of('name',attrs) ||
+  this.validates_length_of('name',attrs,5,20) ||
+  this.validates_presence_of('description',attrs) ||
+  this.validates_length_of('description',attrs,10,30) ||
+  this.validates_presence_of('color',attrs) ||
+  this.validates_format_of('color',attrs,/[a-fA-F0-9]{6}/) ||
+  this.validates_uniqueness_of('color',attrs,window.fleets.models,function(e){return e.get('color');});
+if(msg)
+  return msg;
+  }
 });
 
 window.FleetCollection = Backbone.Collection.extend({
@@ -75,14 +106,47 @@ function find_fleet(fleets, id){
   return null;
 }
 
-window.MonsterView = Backbone.View.extend({
+window.MyBasicView = Backbone.View.extend({
+  destroy_me: function() {
+    this.model.destroy();
+  },
+  change: function(ev){
+    if(this.before == $(ev.currentTarget).text())
+      return;
+    var txt = $(ev.currentTarget).text();
+    var which = $(ev.currentTarget).attr('data');
+    if(this.model.set(which,txt)){
+      this.model.save();
+      $(ev.currentTarget).removeClass('has_errors');
+    }else{
+      $(ev.currentTarget).addClass('has_errors');
+    }
+  },
+  on_focus: function(ev){
+    this.before =  $(ev.currentTarget).text();
+  },
+  change_img : function(ev){
+    if($(ev.currentTarget).find('form').length != 0){
+      return true;
+    }
+    var id = parseInt($(ev.currentTarget).attr('data'));
+    var templ = _.template($('#file-template').html());
+    $(ev.currentTarget).html(templ({id : id, resource : this.resource, resources : this.resources}));
+    var myself=this;
+    $(ev.currentTarget).find('form').ajaxForm(function(){ myself.model.fetch(); }); 
+    $(this.el).trigger("monsters.form_added");
+  }
+});
+
+window.MonsterView = MyBasicView.extend({
+  resource:"monster",
+  resources:"monsters",
   initialize: function() {
     this.model.bind('change', this.render, this);
     this.model.bind('destroy', this.remove, this);
 
     this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
     function changed_fleet_ev_handler(iid){
-      console.log("CHANGED FLEET TO:"+iid);
       this.model.set('fleet_id',iid);
       this.model.save();
       this.model.set('fleet',find_fleet(this.model.fleets, iid));
@@ -103,24 +167,6 @@ window.MonsterView = Backbone.View.extend({
     'click span.destroy' : 'destroy_me',
     'click .monster .imgeditable' : 'change_img'
   },
-  change_img: function(ev){
-    if($(ev.currentTarget).find('form').length != 0){
-      return true;
-    }else{
-      var id = parseInt($(ev.currentTarget).attr('data'));
-      var templ = _.template($('#monster-file-template').html());
-      $(ev.currentTarget).html(templ({id : id}));
-      var myself=this;
-      $(ev.currentTarget).find('form').ajaxForm(function() { myself.model.fetch(); }); 
-      $(this.el).trigger("monsters.form_added");
-    }
-  },
-  on_focus: function(ev){
-    this.before =  $(ev.currentTarget).text();
-  },
-  destroy_me: function() {
-    this.model.destroy();
-  },
   render: function() {
     var data = this.model;
     data.fleet_view = this.fleet_view;
@@ -128,18 +174,6 @@ window.MonsterView = Backbone.View.extend({
     $(this.el).find('.my_fleet').html(this.fleet_view.render().el);
     return this;
   },
-  change: function(ev){
-    if(this.before == $(ev.currentTarget).text())
-      return;
-    var txt = $(ev.currentTarget).text();
-    var which = $(ev.currentTarget).attr('data');
-    if(this.model.set(which,txt)){
-      this.model.save();
-      $(ev.currentTarget).removeClass('has_errors');
-    }else{
-      $(ev.currentTarget).addClass('has_errors');
-    }
-  }
 });
 
 window.FleetMiniView = Backbone.View.extend({
@@ -176,7 +210,9 @@ window.FleetMiniView = Backbone.View.extend({
   }
 })
 
-window.FleetView = Backbone.View.extend({
+window.FleetView = MyBasicView.extend({
+  resource:"fleet",
+  resources:"fleets",
   template: _.template($('#fleet-template').html()),
   tag: 'ul',
   className: 'a-fleet',
@@ -186,27 +222,12 @@ window.FleetView = Backbone.View.extend({
     'click span.destroy': 'destroy_me',
     'click .fleet .imgeditable' : 'change_img'
   },
-  change_img : function(ev){
-    if($(ev.currentTarget).find('form').length != 0){
-      return true;
-    }
-    var id = parseInt($(ev.currentTarget).attr('data'));
-    var templ = _.template($('#fleet-file-template').html());
-    $(ev.currentTarget).html(templ({id : id}));
-    var myself=this;
-    $(ev.currentTarget).find('form').ajaxForm(function(){ myself.model.fetch(); }); 
-    $(this.el).trigger("monsters.form_added");
-  },
-  on_focus: function(ev){
-    this.before =  $(ev.currentTarget).text();
-  },
   initialize: function() {
     this.model.bind('change', this.render, this);
     this.model.bind('destroy', this.remove, this);
 
     $('#fleets').append(this.render().el);
   },
-
   destroy_me: function() {
     var myid=this.model.get('id');
     for(var i in window.monsters.models){
@@ -219,18 +240,5 @@ window.FleetView = Backbone.View.extend({
     var data = this.model;
     $(this.el).html(this.template(data));
     return this;
-  },
-  change: function(ev){
-    if(this.before == $(ev.currentTarget).text()){
-      return;
-    }
-    var txt = $(ev.currentTarget).text();
-    var which = $(ev.currentTarget).attr('data');
-    if(this.model.set(which,txt)){
-      this.model.save();
-      $(ev.currentTarget).removeClass('has_errors');
-    }else{
-      $(ev.currentTarget).addClass('has_errors');
-    }
   }
 });

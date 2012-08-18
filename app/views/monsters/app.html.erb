@@ -12,12 +12,13 @@
         })
       });
 
-    function upload_complete_fleets(msg) {
+    function upload_complete(collection,msg) {
       var id = parseInt(msg);
-      if(id) {
-        for(var i in fleets.models){
-          if(fleets.models[i].attributes.id == id){
-            fleets.models[i].fetch();
+      collection = window[collection];
+      if(id && collection) {
+        for(var i in collection.models){
+          if(collection.models[i].attributes.id == id){
+            collection.models[i].fetch();
             break;
           }
         }
@@ -25,21 +26,6 @@
         alert('An error occured');
       }
       webcam.reset();
-    }
-
-    function upload_complete_monsters(msg) {
-      var id = parseInt(msg);
-      if(id) {
-        for(var i in monsters.models){
-          if(monsters.models[i].attributes.id == id){
-            monsters.models[i].fetch();
-            break;
-          }
-        }
-      } else {
-        alert('An error occured');
-        webcam.reset();
-      }
     }
 
     webcam.set_swf_url('/webcam.swf');
@@ -109,28 +95,17 @@
   </div>
 </script>
 
-<script type="text/template" id="monster-file-template">
+<script type="text/template" id="file-template">
   <div class="webcam_holder"></div>
   <input class="shoot" type="button" value="Take picture"
-  onclick="webcam.snap('/monsters/{= id =}/webcam?' + csrf_param + '=' + encodeURI(encodeURI(csrf_token)),upload_complete_monsters)"/>
-  <form action='/monsters/{= id =}' method="post" enctype="multipart/form-data">
+  onclick="webcam.snap('/{= resources =}/{= id =}/webcam?' + csrf_param + '=' + encodeURI(encodeURI(csrf_token)),function(msg){return upload_complete('{= resources =}',msg);})"/>
+  <hr/>
+  <form action='/{= resources =}/{= id =}' method="post" enctype="multipart/form-data">
     <input name="_method" type="hidden" value="put">
-    <input name="monster[image]" type="file">
-    <input name="commit" type="submit" value="Update Monster" class="btn-primary">
+    <input name="{= resource =}[image]" type="file">
+    <input name="commit" type="submit" value="Update {= resource =}" class="btn-primary">
   </form>
 </script>
-
-<script type="text/template" id="fleet-file-template">
-  <div class="webcam_holder"></div>
-  <input class="shoot" type="button" value="Take picture"
-  onclick="webcam.snap('/fleets/{= id =}/webcam?' + csrf_param + '=' + encodeURI(encodeURI(csrf_token)),upload_complete_fleets)"/>
-  <form action='/fleets/{= id =}' method="post" enctype="multipart/form-data">
-    <input name="_method" type="hidden" value="put">
-    <input name="fleet[image]" type="file">
-    <input name="commit" type="submit" value="Update Fleet" class="btn-primary">
-  </form>
-</script>
-
 
 <script src="/javascript/lib/underscore-1.3.3.js"></script>
 <script type="text/javascript">

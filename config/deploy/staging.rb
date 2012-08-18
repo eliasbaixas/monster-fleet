@@ -66,20 +66,21 @@ task :console, :roles => :app do
 end
 
 namespace :deploy do
-  task :symlink_data_dir do
-    puts 'Linking public/data directory...'
-    run "ln -nfs #{shared_path}/system/matteo #{release_path}/public/data"
+  task :symlink_system_dir do
+    puts 'Linking public/system directory...'
+    run "ln -nfs #{shared_path}/system #{release_path}/public/system"
   end
-  task :symlink_files_dir do
-    puts 'Linking public/files directory...'
-    run "ln -nfs #{shared_path}/files #{release_path}/public/files"
+  task :symlink_uploads_dir do
+    puts 'Linking public/uploads directory...'
+    run "ln -nfs #{shared_path}/uploads #{release_path}/public/uploads"
   end
-  task :create_files_dir do
-    run "mkdir -p #{shared_path}/files"
+  task :create_dirs do
+    run "mkdir -p #{shared_path}/uploads"
+    run "mkdir -p #{shared_path}/system"
   end
-  after "setup", "deploy:create_files_dir"
-  after "deploy", "deploy:symlink_files_dir"
-  after "deploy", "deploy:symlink_data_dir"
+  after "setup", "deploy:create_dirs"
+  after "deploy", "deploy:symlink_uploads_dir"
+  after "deploy", "deploy:symlink_system_dir"
 end
 
 namespace :deploy do
