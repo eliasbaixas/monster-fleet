@@ -11,6 +11,8 @@ gem 'paperclip', '~> 3.1.4'
 
 gem 'json'
 
+gem 'rspec'
+
 # Gems used only for assets and not required
 # in production environments by default.
 group :assets do
