@@ -8,79 +8,63 @@
       window.do_client_validations = true;
       window.csrf_param = $('meta[name=csrf-param]').attr('content');
       window.csrf_token = $('meta[name=csrf-token]').attr('content');
-
-      $(document).on('monsters.form_added',"#monsters,#fleets", function(ev){
-        $(ev.currentTarget).find('.webcam_holder').html(webcam.get_html(240, 180));
-        })
       });
-
-    function do_snapshot(event, resources,id) {
-      var the_elem=$(event.currentTarget).closest('.imgeditable');
-      the_elem.addClass('spinning');
-      var url = '/'+resources+'/'+ id + '/webcam?' + csrf_param + '=' + encodeURI(encodeURI(csrf_token));
-      webcam.snap(url,function(msg){ return upload_complete(resources,msg,the_elem); })
-    }
-    function upload_complete(collection,msg,el) {
-      el.removeClass('spinning');
-      var id = parseInt(msg);
-      collection = window[collection];
-      if(id && collection) {
-        for(var i in collection.models){
-          if(collection.models[i].attributes.id == id){
-            collection.models[i].fetch();
-            break;
-          }
-        }
-      } else {
-        alert('An error occured');
-      }
-      webcam.reset();
-    }
 
     webcam.set_swf_url('/webcam.swf');
     webcam.set_quality(90);
     webcam.set_shutter_sound(true, '/shutter.mp3');
 </script>
 
-<div class="span4">
-  <h1>Fleets</h1>
-  <div id="fleets"> </div>
-  <%= button_to_function "New Fleet", "new_fleet();", :class => "btn-primary btn-large" %>
-</div>
-<div class="span4">
-  <h1>Monsters</h1>
-  <div id="monsters"> </div>
-  <%= button_to_function "New Monster", "new_monster();", :class => "btn-primary btn-large" %>
+<div id="multi_view">
 </div>
 
 <div class="span4">
   <ul>
     <li>A Fleet has many Monsters, so Monster belongs to a Fleet.</li>
-    <li>You can edit Fleets and Monsters attributes in-line, just click on the attribute you want to change.</li>
+    <li>You can edit Fleets and Monsters attributes in-line, click on 'edit' and then on the attribute you want to change.</li>
     <li>When you change any attribute on a Fleet, the views on monsters should be automatically updated as well.</li>
-    <li>You can only destroy Fleets that have no monsters (validation is don on client and on server).</li>
-    <li>Validations for attributes are done on client as well as on server side.</li>
+    <li>You can only destroy Fleets that have no monsters (validation is done on client and on server).</li>
+    <li>Validations for attributes are done on client first, then on server side.</li>
     <li style="border:2px solid red;">Client-side validation errors are highlighted in red.</li>
     <li style="border:2px solid #00ff00;">Server-side errors are highlighted in green.</li>
-    <li><input type="checkbox" checked="true" onchange="window.do_client_validations = !window.do_client_validations"></input> Perform Client Validations (vs. Server validations only)</li>
+    <li>
+      <input type="checkbox" checked="true" onchange="window.do_client_validations = !window.do_client_validations"></input>
+      Perform Client Validations (vs. Server validations only)
+    </li>
   </ul>
 </div>
 
+<script type="text/template" id="all-template">
+  <div class="span4">
+    <h1>Fleets</h1>
+    <div class="fleets">
+    </div>
+    <a href="#" class="new-fleet btn-primary btn-large" >New Fleet</a>
+  </div>
+  <div class="span4">
+    <h1>Monsters</h1>
+    <div class="monsters">
+    </div>
+    <a href="#" class="new-monster btn-primary btn-large" >New Monster</a>
+  </div>
+</script>
+
 <script type="text/template" id="monster-template">
-  <div class="well monster {% if(!isValid()){ %} has_errors {% } %} {% if(isNew()){ %} is_new {% } %}">
+  <div class="well monster {= is_valid_class() =} {= is_editable_class() =} {= is_new_class() =}"
     <span class="destroy">X</span>
+    <span class="make-editable">{= content_editable_text() =}</span>
     <div class="editable-holder name">
-      <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
+      <h3 data="name" {= content_editable_helper() =} class='name editable inline'>{= model.get('name') =}</h3>
     </div>
     <div class="editable-holder description">
-      <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+      <p data="description" {= content_editable_helper() =} class='description editable'>{= model.get('description') =}</p>
     </div>
     <div class="editable-holder image">
-      <div class='imgeditable editable' data="{= get('id') =}">
-        <img data="image_url" src='{= get('image_url') =}'></img>
+      <div class='imgeditable' data="{= model.get('id') =}">
+        <img data="image_url" src='{= image_url() =}'></img>
       </div>
     </div>
-    <div class="editable-holder fleet_id fleet">
+    <div class="editable-holder fleet fleet_id">
       <div class="my_fleet">
       </div>
     </div>
@@ -95,37 +79,39 @@
   {% } else { %}
   <div class="one_fleet fleet" style="background-color:#{= model.get('color') =}">
     <h4>Belongs to fleet:</h4>
-    <img style="width:30px;height:30px;" src='{= model.get('image_url') =}'></img>
-    <bold class='name inline'>{= model.get('name') =}</bold>
+    <img style="width:30px;height:30px;" src='{= image_url() =}'></img>
+    <bold class='inline'>{= model.get('name') =}</bold>
   </div>
   {% } %}
 </script>
 
 <script type="text/template" id="fleet-multi-template">
   <h4>Select the fleet to which this moster belongs</h4>
-  {% _.each(models, function(fleet){ if(fleet.isNew())return; %}
+  {% _.each(model.collection.models, function(fleet){ if(fleet.isNew())return; %}
     <div data="{= fleet.get('id') =}" class="many_fleet fleet" style="background-color:#{= fleet.get('color') =}">
-      <img style="width:30px;height:30px;" src='{= fleet.get('image_url') =}'></img>
-      <bold class='name inline'>{= fleet.get('name') =}</bold>
+      <img style="width:30px;height:30px;" src='{= image_url(fleet) =}'></img>
+      <bold class='inline'>{= fleet.get('name') =}</bold>
     </div>
     {% }); %}
 </script>
 
 <script type="text/template" id="fleet-template">
-  <div class="well fleet  {% if(!isValid()){ %} has_errors {% } %} {% if(isNew()){ %} is_new {% } %}" style="background-color:#{= get('color') =}">
+  <div class="well fleet {= is_valid_class() =} {= is_editable_class() =} {= is_new_class() =}"
+    style="background-color:#{= model.get('color') =}">
     <span class="destroy">X</span>
+    <span class="make-editable">{= content_editable_text() =}</span>
     <div class="editable-holder name">
-      <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
+      <h3 data="name" {= content_editable_helper() =} class='name editable inline'>{= model.get('name') =}</h3>
     </div>
     <div class="editable-holder description">
-      <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+      <p data="description" {= content_editable_helper() =} class='description editable'>{= model.get('description') =}</p>
     </div>
     <div class="editable-holder color">
-      <p>#<strong contentEditable='true' data="color" class='color editable'>{= get('color') =}</strong></p>
+      <p>#<strong data="color" {= content_editable_helper() =} class='color editable'>{= model.get('color') || 'abc' =}</strong></p>
     </div>
     <div class="editable-holder image">
-      <div class='imgeditable editable' data="{= get('id') =}">
-        <img data="image_url" src='{= get('image_url') =}'></img>
+      <div class='imgeditable' data="{= model.get('id') =}">
+        <img data="image_url" src='{= image_url() =}'></img>
       </div>
     </div>
   </div>
@@ -133,7 +119,7 @@
 
 <script type="text/template" id="file-template">
   <div class="webcam_holder"></div>
-  <input class="shoot" type="button" value="Take picture" onclick="do_snapshot(event,'{= resources =}','{= id =}');"/>
+  <input class="shoot" type="button" value="Take picture"/>
   <hr/>
   <form action='/{= resources =}/{= id =}' method="post" enctype="multipart/form-data">
     <input name="_method" type="hidden" value="put">

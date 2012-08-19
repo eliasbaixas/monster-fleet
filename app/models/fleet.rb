@@ -1,6 +1,6 @@
 class Fleet < ActiveRecord::Base
 
-  has_attached_file :image, :styles => { :thumb => "100x100>" }
+  has_attached_file :image, :styles => { :medium => "300x300>", :thumb => "100x100>" }
   attr_accessible :color, :description, :name, :image
 
   has_many :monsters
@@ -13,12 +13,16 @@ class Fleet < ActiveRecord::Base
 
   before_destroy :check_no_monsters_left
 
-  def image_url
-    image.url(:thumb)
+  def image_urls
+    {
+      :thumb => image.url(:thumb), 
+      :medium => image.url(:medium), 
+      :original => image.url(:original)
+    }
   end
 
   def as_json(options={})
-      super(:only => [:color,:name,:description,:id],:methods => :image_url)
+      super(:only => [:color,:name,:description,:id],:methods => :image_urls)
   end
 
   private

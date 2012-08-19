@@ -59,15 +59,20 @@ class FleetsController < ApplicationController
   end
 
   def update
-    @fleet = Fleet.find(params[:id])
+    @fleet = Fleet.where(:id => params[:id]).first
 
     respond_to do |format|
-      if @fleet.update_attributes(params[:fleet])
-        format.html { redirect_to @fleet, notice: 'Fleet was successfully updated.' }
-        format.json { head :no_content }
+      if ! @fleet
+        format.html { redirect_to fleets_url, :notice=> 'Fleet does not exist.' }
+        format.json { render :json => {:base => "Fleet does not exist!"} , :status => :unprocessable_entity }
       else
-        format.html { render action: "edit" }
-        format.json { render json: @fleet.errors, status: :unprocessable_entity }
+        if @fleet.update_attributes(params[:fleet])
+          format.html { redirect_to @fleet, :notice=> 'Fleet was successfully updated.' }
+          format.json { head :no_content }
+        else
+          format.html { render action: "edit" }
+          format.json { render :json=> @fleet.errors, :status=> :unprocessable_entity }
+        end
       end
     end
   end

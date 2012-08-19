@@ -2,14 +2,24 @@
   padding-top: 50px;
 }
 .server_errors { border: 2px solid #00FF00; }
+.server_error { border: 2px solid #00FF00; }
+.client_error { border: 2px solid #FF0000; }
 .has_errors { border: 2px solid red; }
 .is_new { opacity: .6; }
 .color { float: right; }
 .name {
   min-width: 10px;
-  display: inline-block;
+  text-align: center;
 }
-.editable:hover  { border-left: 1px solid red; }
+.is_editable { border: 2px dashed #333; }
+.is_editable .editable-holder { margin:3px;
+  border: 1px dotted #6688aa;
+  -webkit-border-radius: 3px;
+     -moz-border-radius: 3px;
+          border-radius: 3px;
+}
+.editable[contentEditable=true]:hover { border-left: 2px solid red; }
+
 .monster > .inline {
   display: inline-block;
   margin-left: 10px;
@@ -30,6 +40,8 @@
 }
 .destroy { font-size: 12px; cursor: pointer; }
 .destroy:hover { background-color: red; }
+.make-editable { float: right; font-size: 12px; cursor: pointer; }
+.make-editable:hover { background-color: #5588FF; }
 
 .spinning { background-image: url('/images/spinner.gif'); }
 .spinning > * { visibility: hidden;}

@@ -11,12 +11,16 @@ class Monster < ActiveRecord::Base
 
   belongs_to :fleet
 
-  def image_url
-    image.url(:thumb)
+  def image_urls
+    {
+      :thumb => image.url(:thumb), 
+      :medium => image.url(:medium), 
+      :original => image.url(:original)
+    }
   end
 
   def as_json(options={})
-      super(:only => [:fleet_id,:name,:description,:id],:methods => :image_url)
+      super(:only => [:fleet_id,:name,:description,:id],:methods => :image_urls)
   end
 
 end
