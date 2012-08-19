@@ -66,11 +66,10 @@ window.Monster = BaseModel.extend({
       my_fleet=this.fleet_collection.models[0];
       this.set('fleet_id',my_fleet.get('id'));
     }
-    var myself = this;
     if(my_fleet){
       my_fleet.on("change",function(model,err){
-        myself.trigger('change');
-      });
+        this.trigger('change');
+      },this);
     }
     this.set('fleet',my_fleet);
   }, 
@@ -138,10 +137,9 @@ window.BaseView = Backbone.View.extend({
   content_editable_text : function(){ return (this.is_editable ? "[finish]" : "[edit]"); },
   content_editable_helper : function(){ return (this.is_editable ? " contentEditable='true' " : ""); },
   is_editable : false,
-  current_view : "medium",
-  navigate_to_model : function(){ },
+  default_current_view : "thumb",
   image_url : function(){
-    return this.model.get('image_urls')[this.current_view];
+    return this.model.get('image_urls')[this.current_view || this.default_current_view];
   },
   handle_error : function(model,errors){
     var nam;
@@ -155,10 +153,10 @@ window.BaseView = Backbone.View.extend({
     }
   },
   do_snapshot : function(event) {
-    var myself=this;
     var the_elem=$(event.currentTarget).closest('.imgeditable');
     the_elem.addClass('spinning');
     var url = '/' + this.resources + '/' + this.model.get('id') + '/webcam?' + window.csrf_param + '=' + encodeURI(window.csrf_token);
+    var myself=this;
     webcam.snap(url,function(msg){
       return myself.upload_complete(msg,the_elem);
     });
@@ -228,6 +226,8 @@ window.BaseView = Backbone.View.extend({
   },
   on_focus: function(ev){
     this.before =  $(ev.currentTarget).text();
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
   },
   change_img : function(ev){
     if(!this.is_editable || $(ev.currentTarget).find('form').length !== 0 || this.model.isNew()){
@@ -264,15 +264,16 @@ window.BaseView = Backbone.View.extend({
   }
 });
 
-window.MonsterView = BaseView.extend({
+window.MonsterSmallView = BaseView.extend({
   resource:"monster",
   resources:"monsters",
   initialize: function(attrs) {
     this.model.bind('change', this.render, this);
     this.model.bind('destroy', this.remove, this);
     this.model.bind('error', this.handle_error, this);
+    this.current_view = attrs.current_view;
 
-    this.fleet_view = new FleetMiniView({model:this.model.get('fleet')});
+    this.fleet_view = new FleetThumbView({model:this.model.get('fleet')});
 
     if(this.model.isNew()){
       this.is_editable = true
@@ -286,7 +287,7 @@ window.MonsterView = BaseView.extend({
         wait : true ,
           success: function(model,resp){
             model.set('fleet',find_fleet(model.fleet_collection, iid));
-            myself.fleet_view = new FleetMiniView({model:model.get('fleet')});
+            myself.fleet_view = new FleetThumbView({model:model.get('fleet')});
             myself.fleet_view.is_editable = myself.is_editable;
             myself.fleet_view.on('changed_fleet',changed_fleet_ev_handler,myself);
             myself.render();
@@ -321,9 +322,9 @@ window.MonsterView = BaseView.extend({
   events: {
     'editable_changed' : "editable_changed_handler",
     'focus [contentEditable]' : "on_focus",
+    'click [contentEditable]' : "on_focus",
     'blur [contentEditable]' : "change",
     'click .shoot' : 'do_snapshot',
-    'click .name' : 'navigate_to_model',
     'click span.destroy' : 'destroy_me',
     'click span.make-editable' : 'toggle_editable',
     'click .monster .imgeditable' : 'change_img'
@@ -335,7 +336,20 @@ window.MonsterView = BaseView.extend({
   }
 });
 
-window.FleetMiniView = Backbone.View.extend({
+window.SingleView = Backbone.View.extend({
+  template: _.template($('#single-template').html()),
+  initialize: function(opts){
+    this.title = opts.title;
+    $(opts.holder).html(this.el);
+    this.render();
+  },
+  render: function() {
+    $(this.el).html(this.template(this));
+    return this;
+  }
+});
+
+window.FleetThumbView = Backbone.View.extend({
   image_url : function(model){
     return (model||this.model).get('image_urls')['thumb'];
   },
@@ -373,7 +387,7 @@ window.FleetMiniView = Backbone.View.extend({
   }
 });
 
-window.FleetView = BaseView.extend({
+window.FleetSmallView = BaseView.extend({
   resource:"fleet",
   resources:"fleets",
   template: _.template($('#fleet-template').html()),
@@ -382,9 +396,9 @@ window.FleetView = BaseView.extend({
   events: {
     'editable_changed' : "render",
   'focus [contentEditable]' : "on_focus",
+  'click [contentEditable]' : "on_focus",
   'blur [contentEditable]' : "change",
   'click .shoot' : 'do_snapshot',
-  'click .name' : 'navigate_to_model',
   'click span.destroy': 'destroy_me',
   'click span.make-editable' : 'toggle_editable',
   'click .fleet .imgeditable' : 'change_img'
@@ -393,6 +407,7 @@ window.FleetView = BaseView.extend({
     this.model.bind('change', this.render, this);
     this.model.bind('destroy', this.remove, this);
     this.model.bind('error', this.handle_error, this);
+    this.current_view = attrs.current_view;
 
     if(this.model.isNew()){
       this.is_editable = true
@@ -420,8 +435,7 @@ window.FleetView = BaseView.extend({
   }
 });
 
-window.BigView = Backbone.View.extend({
-  el : "#multi_view",
+window.BigBaseView = Backbone.View.extend({
   render:function(){
     $(this.el).html(this.template());
   },
@@ -434,7 +448,7 @@ window.BigView = Backbone.View.extend({
         console.log(resp);
       },
       success: function(col,resp){
-        myself.trigger('fleets_loaded',col);
+        col.trigger('fleets_loaded',col);
       }
     });
   },
@@ -447,31 +461,58 @@ window.BigView = Backbone.View.extend({
         console.log(resp);
       },
       success: function(col){
-        myself.trigger('monsters_loaded',col);
+        col.trigger('monsters_loaded',col);
       }
     });
+  },
+  default_images : {
+    thumb : "/images/thumb/missing.png" ,
+    medium : "/images/thumb/missing.png" ,
+    original : "/images/thumb/missing.png"
+  },
+  new_monster : function(ev){
+    ev.stopImmediatePropagation();
+    var m = new Monster({name : "Change me", description : "Some Description", image_urls : this.default_images}, {fleet_collection:this.fleets});
+    this.monsters.add(m);
+    var mv = new MonsterSmallView({model:m, is_editable : true, holder : $(this.el).find('.monsters')});
+    return false;
+  },
+  new_fleet : function(ev){
+    ev.stopImmediatePropagation();
+    var m = new Fleet({name : "Change me", description : "Some Description", image_urls : this.default_images, color : generate_color()});
+    this.fleets.add(m);
+    var fv = new FleetSmallView({model:m, is_editable : true, holder : $(this.el).find('.fleets')});
+    return false;
   }
 });
 
-window.AllView = BigView.extend({
-  el : "#multi_view",
+window.GeneralView = BigBaseView.extend({
   template: _.template($('#all-template').html()),
-  initialize : function(){
+  initialize : function(attrs){
     var myself=this;
-    this.monsters = new MonsterCollection();
-    this.fleets = new FleetCollection();
+    this.monsters = attrs.monster_collection;
+    this.fleets = attrs.fleet_collection;
+    this.monster_views = [];
+    this.fleet_views = [];
+    this.holder=attrs.holder;
+    $(this.holder).append(this.el);
     this.render();
-    this.on('fleets_loaded',function(col){
+    this.fleets.on('fleets_loaded',function(col){
+      console.log("Processing fleets_loaded");
+      _.each(this.fleet_views,function(view){view.remove();});
+      this.fleet_views = [];
       col.each(function(modl){
-        var fv=new FleetView({model:modl, holder : $(myself.el).find('.fleets')});
-      });
+        this.fleet_views.push(new FleetSmallView({model:modl, holder : $(this.el).find('.fleets')}));
+      },this);
       myself.fetch_monsters();
-    });
-    this.on('monsters_loaded',function(col){
+    },this);
+    this.monsters.on('monsters_loaded',function(col){
+      _.each(this.monster_views,function(view){view.remove();});
+      this.monster_views = [];
       col.each(function(modl){
-        var fv=new MonsterView({model:modl, holder : $(myself.el).find('.monsters')});
-      })
-    });
+        this.monster_views.push(new MonsterSmallView({model:modl, holder : $(this.el).find('.monsters')}));
+      },this)
+    },this);
     this.fetch_fleets();
   },
   events : {
@@ -480,35 +521,168 @@ window.AllView = BigView.extend({
   },
   render:function(){
     $(this.el).html(this.template());
+    _.each(this.fleet_views,function(v){ $(this.el).find('.fleets').append(v.render().el); },this);
+    _.each(this.monster_views,function(v){ $(this.el).find('.monsters').append(v.render().el); },this);
+  }
+});
+window.MonsterCollectionView = BigBaseView.extend({
+  template: _.template($('#all-monsters-template').html()),
+  current_view : "medium",
+  initialize : function(opts){
+    this.monsters = opts.monster_collection;
+    this.fleets = opts.fleet_collection;
+    this.monster_views = [];
+    this.fleet_views = [];
+    $(opts.holder).append(this.el);
+    this.render();
+    this.fleets.on('fleets_loaded',function(col){
+      console.log("Processing fleets_loaded");
+      _.each(this.fleet_views,function(view){view.remove();});
+      this.fleet_views = [];
+      col.each(function(modl){
+        this.fleet_views.push(new FleetSmallView({model:modl, holder : $(this.el).find('.fleets'), current_view : "medium"}));
+      },this);
+      this.fetch_monsters();
+    },this);
+    this.monsters.on('monsters_loaded',function(col){
+      _.each(this.monster_views,function(view){view.remove();});
+      this.monster_views = [];
+      col.each(function(modl){
+        this.monster_views.push(new MonsterSmallView({model:modl, holder : $(this.el).find('.monsters'), current_view : "medium"}));
+      },this)
+    },this);
+    this.fetch_fleets();
   },
-  default_images : {
-    thumb : "/images/thumb/missing.png" ,
-    medium : "/images/thumb/missing.png" ,
-    original : "/images/thumb/missing.png"
+  events : {
+    'click a.new-monster' : "new_monster",
   },
-  new_monster : function(){
-    var m = new Monster({name : "Change me", description : "Some Description", image_urls : this.default_images}, {fleet_collection:this.fleets});
-    this.monsters.add(m);
-    var mv = new MonsterView({model:m, is_editable : true, holder : $(myself.el).find('.monsters')});
+  render:function(){
+    $(this.el).html(this.template());
+    _.each(this.monster_views,function(v){ $(this.el).find('.monsters').append(v.render().el); },this);
+  }
+});
+window.FleetCollectionView = BigBaseView.extend({
+  template: _.template($('#all-fleets-template').html()),
+  current_view : "medium",
+  initialize : function(opts){
+    this.fleets = opts.fleet_collection;
+    this.fleet_views = [];
+    $(opts.holder).append(this.el);
+    this.render();
+    this.fleets.on('fleets_loaded',function(col){
+      console.log("Processing fleets_loaded");
+      _.each(this.fleet_views,function(view){view.remove();});
+      this.fleet_views = [];
+      col.each(function(modl){
+        this.fleet_views.push(new FleetSmallView({model:modl, holder : $(this.el).find('.fleets'), current_view : "medium"}));
+      },this);
+    },this);
+    this.fetch_fleets();
   },
-  new_fleet : function(){
-    var m = new Fleet({name : "Change me", description : "Some Description", image_urls : this.default_images, color : generate_color()});
-    this.fleets.add(m);
-    var fv = new FleetView({model:m, is_editable : true, holder : $(this.el).find('.fleets')});
+  events : {
+    'click a.new-fleet' : "new_fleet",
+  },
+  render:function(){
+    $(this.el).html(this.template());
+    _.each(this.fleet_views,function(v){ $(this.el).find('.fleets').append(v.render().el); },this);
   }
 });
 
 var MonstersApp = Backbone.Router.extend({
-  routes: {
-    "": "all",  // #all
-    "monsters/:id": "monsters",  // #monsters/7
-    "fleets/:id":   "fleets"   // #fleets/8
+  initialize : function(opts){
+    this.el = opts.el;
+    this.monster_collection = new MonsterCollection();
+    this.fleet_collection = new FleetCollection();
+    this.viewing = null;
   },
-  all: function() {
-    this.main_view = new AllView();
-  },
-  monsters: function(id) {
-  },
-  fleets: function(id) {
-  }
+    remove_old_view : function(){
+      if(this.viewing){
+        this.viewing.remove();
+      }
+    },
+    routes: {
+      "": "all",  // #all
+    "monsters": "index_monsters",    // #monsters
+    "fleets":   "index_fleets",      // #fleets
+    "monsters/:id" : "show_monster", // #monsters/7
+    "fleets/:id":   "show_fleet"    // #fleets/8
+    },
+    all: function() {
+      this.remove_old_view();
+      this.viewing = new GeneralView({
+        holder: this.el,
+        monster_collection : this.monster_collection,
+        fleet_collection : this.fleet_collection
+      });
+    },
+    index_monsters: function() {
+      this.remove_old_view();
+      this.viewing = new MonsterCollectionView({
+        holder : this.el,
+        monster_collection : this.monster_collection,
+        fleet_collection : this.fleet_collection
+      });
+    },
+    index_fleets: function() {
+      this.remove_old_view();
+      this.viewing = new FleetCollectionView({
+        holder : this.el,
+        fleet_collection : this.fleet_collection
+      });
+      console.log("GOING TO fleets");
+    },
+    show_monster: function(id) {
+      this.remove_old_view();
+      var id = parseInt(id,10);
+      var myself=this;
+      var monster = this.monster_collection.get(id);
+      if(monster){
+        this.viewing = new SingleView({ title : "Monster "+id, holder : this.el });
+        var thingy= new MonsterSmallView({model:monster, holder : $(this.viewing.el).find('.holding') });
+      }else{
+        this.monster_collection.fetch({
+          fleet_collection: this.fleet_collection,
+          error: function(col,resp){
+            console.log('error:');
+            console.log(resp);
+          },
+          success: function(col){
+            col.trigger('monsters_loaded',col);
+            var monster = col.get(id);
+            if(monster){
+              myself.viewing = new SingleView({ title : "Monster "+id, holder : myself.el });
+              var thingy= new MonsterSmallView({model:monster, holder : $(myself.viewing.el).find('.holding') });
+            }
+          }
+        });
+        console.log("MONSTER NOT FOUND:"+id);
+      }
+    },
+    show_fleet: function(id) {
+      this.remove_old_view();
+      var id = parseInt(id,10);
+      var myself=this;
+      var fleet = this.fleet_collection.get(id);
+      if(fleet){
+        this.viewing = new SingleView({ title : "Fleet "+id, holder : this.el });
+        var thingy = new FleetSmallView({ model: fleet, holder : $(this.viewing.el).find('.holding') });
+      }else{
+        this.fleet_collection.fetch({
+          error: function(col,resp){
+            console.log('error:');
+            console.log(resp);
+          },
+          success: function(col){
+            col.trigger('monsters_loaded',col);
+            var fleet = col.get(id);
+            if(fleet){
+              myself.viewing = new SingleView({ title : "Fleet "+id, holder : myself.el });
+              var thingy = new FleetSmallView({ model: fleet, holder : $(myself.viewing.el).find('.holding') });
+            }
+          }
+        });
+      }
+      console.log("GOING TO fleet "+id);
+    }
+
 });

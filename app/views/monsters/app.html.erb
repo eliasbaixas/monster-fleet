@@ -1,13 +1,26 @@
 <script src="/javascript/lib/jquery.form.js"></script> 
 <script src="/javascript/my_colors.js"></script>
-<script src="/javascript/app.js"></script>
 <script src="/javascript/lib/webcam.js"></script>
 
 <script type="text/javascript">
   $(document).ready(function(){
+
       window.do_client_validations = true;
       window.csrf_param = $('meta[name=csrf-param]').attr('content');
       window.csrf_token = $('meta[name=csrf-token]').attr('content');
+
+      var router = new MonstersApp({pushState: true, el : "#multi_view" });
+      Backbone.history.start();
+      router.navigate("", true);
+
+      $('body').on('click', 'a', function(e){
+        e.preventDefault();
+        var $a = $(e.target).closest('a');
+        var href = $a.attr('href');
+
+        if(href === '#') return; // Escape the null link
+        router.navigate(href, true);
+        });
       });
 
     webcam.set_swf_url('/webcam.swf');
@@ -34,15 +47,41 @@
   </ul>
 </div>
 
+<script type="text/template" id="single-template">
+  <div class="span8">
+    <h1>{= title =}</h1>
+    <div class="holding">
+    </div>
+  </div>
+</script>
+
+<script type="text/template" id="all-monsters-template">
+  <div class="span8">
+    <h1>Monsters</h1>
+    <div class="monsters">
+    </div>
+    <a href="#" class="new-monster btn-primary btn-large" >New Monster</a>
+  </div>
+</script>
+
+<script type="text/template" id="all-fleets-template">
+  <div class="span8">
+    <h1>Fleets</h1>
+    <div class="fleets">
+    </div>
+    <a href="#" class="new-monster btn-primary btn-large" >New Fleet</a>
+  </div>
+</script>
+
 <script type="text/template" id="all-template">
   <div class="span4">
-    <h1>Fleets</h1>
+    <a href="#fleets"><h1>Fleets</h1></a>
     <div class="fleets">
     </div>
     <a href="#" class="new-fleet btn-primary btn-large" >New Fleet</a>
   </div>
   <div class="span4">
-    <h1>Monsters</h1>
+    <a href="#monsters"><h1>Monsters</h1></a>
     <div class="monsters">
     </div>
     <a href="#" class="new-monster btn-primary btn-large" >New Monster</a>
@@ -54,7 +93,7 @@
     <span class="destroy">X</span>
     <span class="make-editable">{= content_editable_text() =}</span>
     <div class="editable-holder name">
-      <h3 data="name" {= content_editable_helper() =} class='name editable inline'>{= model.get('name') =}</h3>
+      <h3 data="name" {= content_editable_helper() =} class='name editable inline'><a href="#monsters/{= model.get('id') =}">{= model.get('name') =}</a></h3>
     </div>
     <div class="editable-holder description">
       <p data="description" {= content_editable_helper() =} class='description editable'>{= model.get('description') =}</p>
@@ -101,7 +140,7 @@
     <span class="destroy">X</span>
     <span class="make-editable">{= content_editable_text() =}</span>
     <div class="editable-holder name">
-      <h3 data="name" {= content_editable_helper() =} class='name editable inline'>{= model.get('name') =}</h3>
+      <h3 data="name" {= content_editable_helper() =} class='name editable inline'><a href="#fleets/{= model.get('id') =}">{= model.get('name') =}</a></h3>
     </div>
     <div class="editable-holder description">
       <p data="description" {= content_editable_helper() =} class='description editable'>{= model.get('description') =}</p>
