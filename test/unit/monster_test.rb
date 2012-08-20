@@ -22,7 +22,7 @@ class MonsterTest < ActiveSupport::TestCase
     @monster = Monster.new(attributes.merge(:image => sample_file));
     @monster.save
 
-    assert @monster.valid?
+    assert !@monster.valid?
   end
   
 end

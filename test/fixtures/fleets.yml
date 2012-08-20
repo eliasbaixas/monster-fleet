@@ -1,9 +1,12 @@
 one:
-  name: Monster One
-  description: Some Monster Description
+  name: Fleet One
+  description: Some Fleet Description
   color: aabbcc
-
 two:
-  name: Monster Two
-  description: Other Monster description
+  name: Fleet Two
+  description: Some Other Fleet Description
+  color: aabbcd
+empty_fleet:
+  name: Fleet Two
+  description: Other Fleet description
   color: ccbbaa

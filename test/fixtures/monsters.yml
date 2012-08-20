@@ -3,6 +3,6 @@ one:
   description: MyText
   fleet: one
 
-empty_fleet:
-  name: MyString
-  description: MyText
+some_monster:
+  name: Some Monster
+  description: Some Description
