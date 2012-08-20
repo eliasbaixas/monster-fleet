@@ -147,7 +147,7 @@ window.FleetCollection = Backbone.Collection.extend({
 });
 
 /** 
- * A collection of Fleets
+ * A collection of Monsters
  */
 window.MonsterCollection = Backbone.Collection.extend({
   model: Monster,
@@ -283,6 +283,11 @@ window.BaseView = Backbone.View.extend({
     ev.preventDefault();
     ev.stopImmediatePropagation();
   },
+  /**
+   * Prepare everything for changing the image:
+   *  * prepare the webcam for snapshots
+   *  * prepare the file form for uploads
+   */
   change_img : function(ev){
     if(!this.is_editable || $(ev.currentTarget).find('form').length !== 0 || this.model.isNew()){
       return true;
@@ -318,6 +323,9 @@ window.BaseView = Backbone.View.extend({
   }
 });
 
+/**
+ * View for one single monster instance
+ */
 window.MonsterView = BaseView.extend({
   resource_name:"monster",
   resources_name:"monsters",
@@ -389,6 +397,11 @@ window.MonsterView = BaseView.extend({
   }
 });
 
+/**
+ * View for "Object not found".
+ * Displays a title
+ * Displays a 'back' link to 'back_to'
+ */
 window.NotFoundView = Backbone.View.extend({
   template: _.template($('#notfound-template').html()),
   initialize: function(opts){
@@ -403,6 +416,11 @@ window.NotFoundView = Backbone.View.extend({
   }
 });
 
+/**
+ * View for single object (monster or fleet).
+ * Displays a title
+ * Displays a 'back' link to 'back_to'
+ */
 window.SingleView = Backbone.View.extend({
   template: _.template($('#single-template').html()),
   initialize: function(opts){
@@ -417,6 +435,14 @@ window.SingleView = Backbone.View.extend({
   }
 });
 
+/**
+ * View for a thumbnail representation of Fleet, to be used within MonsterView
+ * it has 2 states:
+ *  * expanded: so that user can chose a different Fleet for this Monster.
+ *  * not expanded: just display the Fleet this monster belongs to.
+ * when displaying all the feets, each fleet HTML needs an attribute indicating its ID, 
+ * so that when user selects a different fleet, we know its ID and can trigger a changed_fleet with the new ID.
+ */
 window.FleetThumbView = Backbone.View.extend({
   image_url : function(model){
     return (model||this.model).get('image_urls').thumb;
@@ -455,6 +481,9 @@ window.FleetThumbView = Backbone.View.extend({
   }
 });
 
+/**
+ * A view for a single Fleet.
+ */
 window.FleetView = BaseView.extend({
   resource_name:"fleet",
   resources_name:"fleets",
@@ -502,6 +531,12 @@ window.FleetView = BaseView.extend({
   }
 });
 
+/**
+ * A Base class for Collection Views
+ * includes methods for fetching fleets and monsters,
+ * and for creating new Fleets and Monsters
+ * if it has a fleet_id, it will be passed to any new Monster.
+ */
 window.BaseCollectionView = Backbone.View.extend({
   my_filter : null,
   render:function(){
@@ -540,7 +575,11 @@ window.BaseCollectionView = Backbone.View.extend({
   },
   new_monster : function(ev){
     ev.stopImmediatePropagation();
-    var m = new Monster({name : "Change me", description : "Some Description", image_urls : this.default_images}, {fleet_collection:this.fleets});
+    var m = new Monster({
+      name : "Change me",
+      description : "Some Description",
+      image_urls : this.default_images,
+      fleet_id : this.fleet_id}, {fleet_collection:this.fleets});
     this.monsters.add(m);
     var mv = new MonsterView({model:m, is_editable : true, holder : $(this.el).find('.monsters')});
     return false;
@@ -554,6 +593,10 @@ window.BaseCollectionView = Backbone.View.extend({
   }
 });
 
+/** 
+ * A view that includes both all Fleets and all Monsters.
+ * On initialization it will refresh all fleets and monsters from server.
+ */
 window.GeneralView = BaseCollectionView.extend({
   template: _.template($('#all-template').html()),
   monster_views : [],
@@ -592,12 +635,20 @@ window.GeneralView = BaseCollectionView.extend({
     _.each(this.monster_views,function(v){ $(this.el).find('.monsters').append(v.render().el); },this);
   }
 });
+/* A View for a Monster Collection.
+ * by default, it will try to refresh the fleet and monster collections (passed in as opts.{fleet,monster}_collection).
+ * Take care that if you are using a Fleet to see its monsters, and a fetch on the fleet_collection is
+ * done, your Fleet your will be removed from the collection (model.collection = null) invalidating its url and thus you cannot edit/destroy it.
+ *
+ * That is why we pass the option skip_fetch: when you dont want to refresh the collection.
+ */
 window.MonsterCollectionView = BaseCollectionView.extend({
   template: _.template($('#all-monsters-template').html()),
   current_view : "medium",
   monster_views : [],
   fleet_views : [],
   initialize : function(opts){
+    this.fleet_id = opts.fleet_id;
     this.monsters = opts.monster_collection;
     this.fleets = opts.fleet_collection;
     this.my_filter = opts.my_filter;
@@ -634,6 +685,13 @@ window.MonsterCollectionView = BaseCollectionView.extend({
     _.each(this.monster_views,function(v){ $(this.el).find('.monsters').append(v.render().el); },this);
   }
 });
+/**
+ * A View for a Fleet Collection.
+ * by default, it will try to refresh the collection (passed in as opts.fleet_collection).
+ * Take care that if you are using a Fleet to see its monsters, and a fetch on the fleet_collection is
+ * done, then Fleet your will be removed from the collection (model.collection = null).
+ * That is why we pass the option skip_fetch: when you dont want to refresh the collection.
+ */
 window.FleetCollectionView = BaseCollectionView.extend({
   template: _.template($('#all-fleets-template').html()),
   current_view : "medium",
@@ -665,6 +723,11 @@ window.FleetCollectionView = BaseCollectionView.extend({
   }
 });
 
+/**
+ * Main Monsters and FLeets application Router.
+ * Has a flag for including/excluding client-side validations.
+ * Tracks the current view, so that on view change, we can remove the previous view.
+ */
 var MonstersApp = Backbone.Router.extend({
   initialize : function(opts){
     this.el = opts.el;
@@ -751,6 +814,7 @@ var MonstersApp = Backbone.Router.extend({
         this.viewing = new SingleView({ title : "Fleet "+id, holder : this.el, back_to : "#fleets" });
         var thingy = new FleetView({ model: fleet, holder : $(this.viewing.el).find('.holding'), current_view : "original" });
         var thingyl = new MonsterCollectionView({
+          fleet_id : id, 
           skip_fetch : true,
           monster_collection : this.monster_collection,
             fleet_collection : this.fleet_collection,
@@ -770,6 +834,7 @@ var MonstersApp = Backbone.Router.extend({
               myself.viewing = new SingleView({ title : "Fleet "+id, holder : myself.el , back_to : "#fleets"});
               var thingy = new FleetView({ model: fleet, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
               var thingyl = new MonsterCollectionView({
+                fleet_id : id, 
                 skip_fetch : true,
                 fleet_collection : myself.fleet_collection,
                 monster_collection : myself.monster_collection,
