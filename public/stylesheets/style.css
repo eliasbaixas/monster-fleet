@@ -2,10 +2,10 @@
   padding-top: 50px;
 }
 strong {min-width: 10px;}
-.server_errors { border: 2px solid #00FF00; }
+.is_editable .editable-holder.server_errors { border: 1px dotted #00FF00; }
+.is_editable .editable-holder.client_errors { border: 1px dotted red; }
 .server_error { border: 2px solid #00FF00; }
 .client_error { border: 2px solid #FF0000; }
-.has_errors { border: 2px solid red; }
 .is_new { opacity: .6; }
 .color { float: right; }
 .name {

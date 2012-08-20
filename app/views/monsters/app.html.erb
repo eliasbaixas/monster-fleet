@@ -36,6 +36,14 @@
   </ul>
 </div>
 
+<script type="text/template" id="notfound-template">
+  <div class="span8">
+    <h1>{= title =}</h1><a href="{= back_to =}">[back]</a>
+    <div class="holding">
+    </div>
+  </div>
+</script>
+
 <script type="text/template" id="single-template">
   <div class="span8">
     <h1>{= title =}</h1><a href="{= back_to =}">[back]</a>
@@ -78,7 +86,7 @@
 </script>
 
 <script type="text/template" id="monster-template">
-  <div class="well monster {= is_valid_class() =} {= is_editable_class() =} {= is_new_class() =}">
+  <div class="well monster {= is_editable_class() =} {= is_new_class() =}">
     <span class="destroy">[destroy]</span>
     <span class="make-editable">{= content_editable_text() =}</span>
     <div class="editable-holder name">
@@ -124,7 +132,7 @@
 </script>
 
 <script type="text/template" id="fleet-template">
-  <div class="well fleet {= is_valid_class() =} {= is_editable_class() =} {= is_new_class() =}"
+  <div class="well fleet {= is_editable_class() =} {= is_new_class() =}"
     style="background-color:#{= model.get('color') =}">
     <span class="destroy">[destroy]</span>
     <span class="make-editable">{= content_editable_text() =}</span>
