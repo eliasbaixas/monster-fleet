@@ -8,6 +8,15 @@ function find_fleet(fleets, id){
   return null;
 }
 
+/**
+ * BaseModel for our app.
+ * Implements advanced error handling
+ *  * at least, more fine-grained than Backbone's default
+ *  * similar than Rails ActiveRecord#errors
+ * If model is in inconsistent state (cannot be saved), then changes are stored in "pending_changes"
+ * then, validations are performed on those "pending_changes" instead of inconsistent values.
+ *
+ */
 window.BaseModel = Backbone.Model.extend({
   errors : {},
   pending_changes : {},
@@ -64,6 +73,14 @@ validates_length_of : function(name,attrs,min,max){
   }
 });
 
+/**
+ * Monster model for our app.
+ * has a name, description, belongs to fleet (so fleet_id), has an image.
+ * Needs a reference to the fleet collection, so that when in "edit mode"
+ * we can show the Fleets available.
+ * Needs a reference to the Fleet to which it belongs (so that it can bind
+ * 'change' on the Fleet and dispatch a 'change' itself).
+ */
 window.Monster = BaseModel.extend({
   initialize: function(attrs,opts){
     this.fleet_collection = opts.fleet_collection;
@@ -100,24 +117,11 @@ window.Monster = BaseModel.extend({
     }
 });
 
-window.MonsterCollection = Backbone.Collection.extend({
-  model: Monster,
-  url: 'monsters'
-});
-
+/**
+ * Fleet model for our app.
+ * has a name, description, color,  has an image.
+ */
 window.Fleet = BaseModel.extend({
-  initialize: function(attrs,opts){
-    this.on("error", function(model, error) {
-      if(console){
-        for(var nam in error){
-          if(error.hasOwnProperty(nam)){
-            console.log(nam + " "+ error[nam]);
-          }
-        }
-      }
-      return true;
-    });
-  }, 
   validate: function(attrs) {
     if(!window.router.do_client_validations){
       return;
@@ -135,22 +139,37 @@ window.Fleet = BaseModel.extend({
   }
 });
 
+/** 
+ * A collection of Fleets
+ */
 window.FleetCollection = Backbone.Collection.extend({
   model: Fleet,
   url: 'fleets'
 });
 
+/** 
+ * A collection of Fleets
+ */
 window.MonsterCollection = Backbone.Collection.extend({
   model: Monster,
   url: 'monsters'
 });
 
+/** 
+ * A Base class for all our views.
+ * Plays well with our BaseModel's errors and validations.
+ * Has some helpers for displaying errors in template.
+ * Implements logic for handling webcam snapshots (uploading etc.).
+ */
 window.BaseView = Backbone.View.extend({
+  /* == template helpers start == */
   is_valid_class : function(){ return this.model.isValid() ? '' : 'has_errors'; },
   is_new_class : function(){ return this.model.isNew() ? "is_new" : "";},
   is_editable_class : function(){ return (this.is_editable ? "is_editable" : ""); },
   content_editable_text : function(){ return (this.is_editable ? "[finish]" : "[edit]"); },
   content_editable_helper : function(){ return (this.is_editable ? " contentEditable='true' " : ""); },
+  /* == template helpers end == */
+  file_template : _.template($('#file-template').html()),
   is_editable : false,
   default_current_view : "thumb",
   views_sizes : {
@@ -169,23 +188,21 @@ window.BaseView = Backbone.View.extend({
     return this.model.get('image_urls')[this.current_view || this.default_current_view];
   },
   handle_error : function(model,errors){
-    var nam;
+    var name;
     $(this.el).find('.editable-holder').removeClass('client_errors');
     $(this.el).find('.client_error').remove();
-    for(nam in model.errors){
-      if(model.errors.hasOwnProperty(nam)){
-        var ele = $(this.el).find('.'+nam+'.editable-holder');
+    for(name in model.errors){
+      if(model.errors.hasOwnProperty(name)){
+        var ele = $(this.el).find('.'+name+'.editable-holder');
         ele.addClass('client_errors');
-//        ele.find('.client_error').remove();
-//        ele.find('[contentEditable]').html(model.get(nam));
-        ele.append('<div class="client_error">'+nam+' '+model.errors[nam]+'</div>');
+        ele.append('<div class="client_error">'+name+' '+model.errors[name]+'</div>');
       }
     }
   },
   do_snapshot : function(event) {
-    var the_elem=$(event.currentTarget).closest('.imgeditable');
+    var the_elem=$(event.currentTarget).closest('.imageEditable');
     the_elem.addClass('spinning');
-    var url = '/' + this.resources + '/' + this.model.get('id') + '/webcam?' + window.csrf_param + '=' + encodeURI(window.csrf_token);
+    var url = '/' + this.resources_name + '/' + this.model.get('id') + '/webcam?' + window.csrf_param + '=' + encodeURI(window.csrf_token);
     var myself=this;
     webcam.snap(url,function(msg){
       return myself.upload_complete(msg,the_elem);
@@ -221,15 +238,11 @@ window.BaseView = Backbone.View.extend({
     var txt = $(ev.currentTarget).text();
     var which = $(ev.currentTarget).attr('data');
     this.model.pending_changes[which]=txt;
-    console.log("pending_changes:");
-    console.log(this.model.pending_changes);
     if(this.model.set(this.model.pending_changes,{silent: !window.router.do_client_validations})){
       delete this.model.pending_changes[which];
       var xhr=this.model.save(null,{wait:true,
         success:function(model,resp){
-          if(console){
-            console.log("Change "+which+" from '"+myself.before+"' to '"+txt+"'");
-          }
+          if(console){ console.log("Change "+which+" from '"+myself.before+"' to '"+txt+"'"); }
           $(myself.el).find('.'+which+'.editable-holder .server_error').remove();
           $(myself.el).find('.'+which+'.editable-holder .client_error').remove();
         },
@@ -238,7 +251,6 @@ window.BaseView = Backbone.View.extend({
           var ele, nam;
           $(myself.el).find('.editable-holder').removeClass('server_errors');
           $(myself.el).find('.server_error').remove();
-//        $(ev.currentTarget).html(myself.before);
           for(nam in json){
             if(json.hasOwnProperty(nam)){
               if(nam === 'base'){
@@ -253,16 +265,13 @@ window.BaseView = Backbone.View.extend({
           }
         }
       });
-/*    if(xhr){
-        $(ev.currentTarget).removeClass('has_errors');
-      }*/
     }else{
       this.model.pending_changes[which] = txt;
-//    $(ev.currentTarget).addClass('has_errors');
     }
   },
   on_focus: function(ev){
     this.before =  $(ev.currentTarget).text();
+    /* in case this is a LINK (<a href...>) do not follow it ! */
     ev.preventDefault();
     ev.stopImmediatePropagation();
   },
@@ -271,10 +280,9 @@ window.BaseView = Backbone.View.extend({
       return true;
     }
     var id = parseInt($(ev.currentTarget).attr('data'),10);
-    var templ = _.template($('#file-template').html());
-    $(ev.currentTarget).html(templ({id : id, resource : this.resource, resources : this.resources}));
+    $(ev.currentTarget).html(this.file_template({id : id, resource : this.resource_name, resources : this.resources_name}));
     var myself=this;
-    var myedit=$(this.el).find('.imgeditable');
+    var myedit=$(this.el).find('.imageEditable');
     $(ev.currentTarget).find('form').ajaxForm({
       success : function(){
         myedit.removeClass('spinning');
@@ -302,9 +310,9 @@ window.BaseView = Backbone.View.extend({
   }
 });
 
-window.MonsterSmallView = BaseView.extend({
-  resource:"monster",
-  resources:"monsters",
+window.MonsterView = BaseView.extend({
+  resource_name:"monster",
+  resources_name:"monsters",
   initialize: function(attrs) {
     this.model.bind('change', this.render, this);
     this.model.bind('destroy', this.remove, this);
@@ -318,35 +326,35 @@ window.MonsterSmallView = BaseView.extend({
       this.fleet_view.is_editable=true;
     }
 
-    var myself=this;
-    function changed_fleet_ev_handler(iid){
-      this.model.set('fleet_id',iid);
-      var xhr=this.model.save(null,{
-        wait : true ,
-          success: function(model,resp){
-            model.set('fleet',find_fleet(model.fleet_collection, iid));
-            myself.fleet_view = new FleetThumbView({model:model.get('fleet')});
-            myself.fleet_view.is_editable = myself.is_editable;
-            myself.fleet_view.on('changed_fleet',changed_fleet_ev_handler,myself);
-            myself.render();
-          },
-          error:function(model,resp){
-            var json = JSON.parse(resp.responseText);
-            var nam;
-            for(nam in json){
-              if(json.hasOwnProperty(nam)){
-                var ele = $(myself.el).find('.'+nam+'.editable-holder');
-                ele.addClass('server_errors');
-                ele.find('.server_error').remove();
-                ele.append('<div class="server_error">'+nam+' '+json[nam]+'</div>');
-              }
-            }
-          }
-      });
-    }
-    this.fleet_view.on('changed_fleet',changed_fleet_ev_handler,this);
+    this.fleet_view.on('changed_fleet',this.changed_fleet_ev_handler,this);
 
     $(attrs.holder).append(this.render().el);
+  },
+  changed_fleet_ev_handler : function(iid){
+    var myself=this;
+    this.model.set('fleet_id',iid);
+    var xhr=this.model.save(null,{
+      wait : true ,
+        success: function(model,resp){
+          model.set('fleet',find_fleet(model.fleet_collection, iid));
+          myself.fleet_view = new FleetThumbView({model:model.get('fleet')});
+          myself.fleet_view.is_editable = myself.is_editable;
+          myself.fleet_view.on('changed_fleet',myself.changed_fleet_ev_handler,myself);
+          myself.render();
+        },
+        error:function(model,resp){
+          var json = JSON.parse(resp.responseText);
+          var nam;
+          for(nam in json){
+            if(json.hasOwnProperty(nam)){
+              var ele = $(myself.el).find('.'+nam+'.editable-holder');
+              ele.addClass('server_errors');
+              ele.find('.server_error').remove();
+              ele.append('<div class="server_error">'+nam+' '+json[nam]+'</div>');
+            }
+          }
+        }
+    });
   },
   editable_changed_handler : function(ev,is_editable){
     if(this.fleet_view){
@@ -355,7 +363,6 @@ window.MonsterSmallView = BaseView.extend({
     this.render();
   },
   template: _.template($('#monster-template').html()),
-  tag: 'div',
   className: 'a-monster',
   events: {
     'editable_changed' : "editable_changed_handler",
@@ -365,7 +372,7 @@ window.MonsterSmallView = BaseView.extend({
     'click .shoot' : 'do_snapshot',
     'click span.destroy' : 'destroy_me',
     'click span.make-editable' : 'toggle_editable',
-    'click .monster .imgeditable' : 'change_img'
+    'click .monster .imageEditable' : 'change_img'
   },
   render: function() {
     $(this.el).html(this.template(this));
@@ -426,11 +433,10 @@ window.FleetThumbView = Backbone.View.extend({
   }
 });
 
-window.FleetSmallView = BaseView.extend({
-  resource:"fleet",
-  resources:"fleets",
+window.FleetView = BaseView.extend({
+  resource_name:"fleet",
+  resources_name:"fleets",
   template: _.template($('#fleet-template').html()),
-  tag: 'ul',
   className: 'a-fleet',
   events: {
     'editable_changed' : "render",
@@ -440,7 +446,7 @@ window.FleetSmallView = BaseView.extend({
   'click .shoot' : 'do_snapshot',
   'click span.destroy': 'destroy_me',
   'click span.make-editable' : 'toggle_editable',
-  'click .fleet .imgeditable' : 'change_img'
+  'click .fleet .imageEditable' : 'change_img'
   },
   initialize: function(attrs) {
     this.model.bind('change', this.render, this);
@@ -513,14 +519,14 @@ window.BigBaseView = Backbone.View.extend({
     ev.stopImmediatePropagation();
     var m = new Monster({name : "Change me", description : "Some Description", image_urls : this.default_images}, {fleet_collection:this.fleets});
     this.monsters.add(m);
-    var mv = new MonsterSmallView({model:m, is_editable : true, holder : $(this.el).find('.monsters')});
+    var mv = new MonsterView({model:m, is_editable : true, holder : $(this.el).find('.monsters')});
     return false;
   },
   new_fleet : function(ev){
     ev.stopImmediatePropagation();
     var m = new Fleet({name : "Change me", description : "Some Description", image_urls : this.default_images, color : generate_color()});
     this.fleets.add(m);
-    var fv = new FleetSmallView({model:m, is_editable : true, holder : $(this.el).find('.fleets')});
+    var fv = new FleetView({model:m, is_editable : true, holder : $(this.el).find('.fleets')});
     return false;
   }
 });
@@ -541,7 +547,7 @@ window.GeneralView = BigBaseView.extend({
       _.each(this.fleet_views,function(view){view.remove();});
       this.fleet_views = [];
       col.each(function(modl){
-        this.fleet_views.push(new FleetSmallView({model:modl, holder : $(this.el).find('.fleets')}));
+        this.fleet_views.push(new FleetView({model:modl, holder : $(this.el).find('.fleets')}));
       },this);
       myself.fetch_monsters();
     },this);
@@ -549,7 +555,7 @@ window.GeneralView = BigBaseView.extend({
       _.each(this.monster_views,function(view){view.remove();});
       this.monster_views = [];
       col.each(function(modl){
-        this.monster_views.push(new MonsterSmallView({model:modl, holder : $(this.el).find('.monsters')}));
+        this.monster_views.push(new MonsterView({model:modl, holder : $(this.el).find('.monsters')}));
       },this);
     },this);
     this.fetch_fleets();
@@ -579,7 +585,7 @@ window.MonsterCollectionView = BigBaseView.extend({
       _.each(this.fleet_views,function(view){view.remove();});
       this.fleet_views = [];
       col.each(function(modl){
-        this.fleet_views.push(new FleetSmallView({model:modl, holder : $(this.el).find('.fleets'), current_view : "medium"}));
+        this.fleet_views.push(new FleetView({model:modl, holder : $(this.el).find('.fleets'), current_view : "medium"}));
       },this);
       this.fetch_monsters();
     },this);
@@ -587,7 +593,7 @@ window.MonsterCollectionView = BigBaseView.extend({
       _.each(this.monster_views,function(view){view.remove();});
       this.monster_views = [];
       col.each(function(modl){
-        this.monster_views.push(new MonsterSmallView({model:modl, holder : $(this.el).find('.monsters'), current_view : "medium"}));
+        this.monster_views.push(new MonsterView({model:modl, holder : $(this.el).find('.monsters'), current_view : "medium"}));
       },this);
     },this);
     this.fetch_fleets();
@@ -613,7 +619,7 @@ window.FleetCollectionView = BigBaseView.extend({
       _.each(this.fleet_views,function(view){view.remove();});
       this.fleet_views = [];
       col.each(function(modl){
-        this.fleet_views.push(new FleetSmallView({model:modl, holder : $(this.el).find('.fleets'), current_view : "medium"}));
+        this.fleet_views.push(new FleetView({model:modl, holder : $(this.el).find('.fleets'), current_view : "medium"}));
       },this);
     },this);
     this.fetch_fleets();
@@ -650,10 +656,10 @@ var MonstersApp = Backbone.Router.extend({
     },
     routes: {
       "": "all",  // #all
-    "monsters": "index_monsters",    // #monsters
-    "fleets":   "index_fleets",      // #fleets
-    "monsters/:id" : "show_monster", // #monsters/7
-    "fleets/:id":   "show_fleet"    // #fleets/8
+      "monsters": "index_monsters",    // #monsters
+      "fleets":   "index_fleets",      // #fleets
+      "monsters/:id" : "show_monster", // #monsters/7
+      "fleets/:id":   "show_fleet"    // #fleets/8
     },
     all: function() {
       this.remove_old_view();
@@ -686,7 +692,7 @@ var MonstersApp = Backbone.Router.extend({
       var monster = this.monster_collection.get(id);
       if(monster){
         this.viewing = new SingleView({ title : "Monster "+id, holder : this.el, back_to : "#monsters" });
-        var thingy= new MonsterSmallView({model:monster, holder : $(this.viewing.el).find('.holding'), current_view : "original"  });
+        var thingy= new MonsterView({model:monster, holder : $(this.viewing.el).find('.holding'), current_view : "original"  });
       }else{
         this.monster_collection.fetch({
           fleet_collection: this.fleet_collection,
@@ -699,7 +705,7 @@ var MonstersApp = Backbone.Router.extend({
             var monster = col.get(id);
             if(monster){
               myself.viewing = new SingleView({ title : "Monster "+id, holder : myself.el, back_to : "#monsters" });
-              var thingy= new MonsterSmallView({model:monster, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
+              var thingy= new MonsterView({model:monster, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
             }
           }
         });
@@ -713,7 +719,7 @@ var MonstersApp = Backbone.Router.extend({
       var fleet = this.fleet_collection.get(id);
       if(fleet){
         this.viewing = new SingleView({ title : "Fleet "+id, holder : this.el, back_to : "#fleets" });
-        var thingy = new FleetSmallView({ model: fleet, holder : $(this.viewing.el).find('.holding'), current_view : "original" });
+        var thingy = new FleetView({ model: fleet, holder : $(this.viewing.el).find('.holding'), current_view : "original" });
       }else{
         this.fleet_collection.fetch({
           error: function(col,resp){
@@ -725,7 +731,7 @@ var MonstersApp = Backbone.Router.extend({
             var fleet = col.get(id);
             if(fleet){
               myself.viewing = new SingleView({ title : "Fleet "+id, holder : myself.el , back_to : "#fleets"});
-              var thingy = new FleetSmallView({ model: fleet, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
+              var thingy = new FleetView({ model: fleet, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
             }
           }
         });

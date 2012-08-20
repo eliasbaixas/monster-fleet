@@ -88,7 +88,7 @@
       <p data="description" {= content_editable_helper() =} class='description editable'>{= model.get('description') =}</p>
     </div>
     <div class="editable-holder image">
-      <div class='imgeditable' data="{= model.get('id') =}">
+      <div class='imageEditable' data="{= model.get('id') =}">
         <img data="image_url" src='{= image_url() =}'></img>
       </div>
     </div>
@@ -138,7 +138,7 @@
       <p>#<strong data="color" {= content_editable_helper() =} class='color editable'>{= model.get('color') || 'abc' =}</strong></p>
     </div>
     <div class="editable-holder image">
-      <div class='imgeditable' data="{= model.get('id') =}">
+      <div class='imageEditable' data="{= model.get('id') =}">
         <img data="image_url" src='{= image_url() =}'></img>
       </div>
     </div>

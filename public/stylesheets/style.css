@@ -13,6 +13,7 @@ strong {min-width: 10px;}
   text-align: center;
 }
 .is_editable { border: 2px dashed #333; }
+.is_editable .imageEditable:hover { cursor: pointer; }
 .is_editable .editable-holder { margin:3px;
   border: 1px dotted #6688aa;
   -webkit-border-radius: 3px;
