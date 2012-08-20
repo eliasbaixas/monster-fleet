@@ -2,98 +2,140 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
-<head>
-<meta charset="utf-8"/>
-<meta name="description" content="Monster Fleet Test"/>
-<title>Testing Monster Fleet</title>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="description" content="Monster Fleet Test"/>
+        <title>Testing Monster Fleet</title>
 
-  <link rel="stylesheet" type="text/css" href="/javascript/lib/jasmine/lib/jasmine-1.2.0/jasmine.css">
-  <script type="text/javascript" src="/javascript/lib/jasmine/lib/jasmine-1.2.0/jasmine.js"></script>
-  <script type="text/javascript" src="/javascript/lib/jasmine/lib/jasmine-1.2.0/jasmine-html.js"></script>
+        <link rel="stylesheet" type="text/css" href="/javascript/lib/jasmine/lib/jasmine-1.2.0/jasmine.css">
+        <script type="text/javascript" src="/javascript/lib/jasmine/lib/jasmine-1.2.0/jasmine.js"></script>
+        <script type="text/javascript" src="/javascript/lib/jasmine/lib/jasmine-1.2.0/jasmine-html.js"></script>
 
-  <script src="/javascript/lib/jquery-1.7.1.js"></script>
-  <script src="/javascript/lib/jquery.form.js"></script> 
+        <script src="/javascript/lib/sinon-1.4.2.js"></script>
+        <script src="/javascript/lib/jquery-1.7.1.js"></script>
+        <script src="/javascript/lib/jquery.form.js"></script> 
 
-<script type="text/template" id="monster-template">
-  <div class="well monster  {% if(!isValid()){ %} has_errors {% } %}">
-    <span class="destroy">X</span>
-    <div class="editable-holder">
-        <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
-    </div>
-    <div class="editable-holder">
-        <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
-    </div>
-    <div class="editable-holder">
-        <div class='imgeditable editable' data="{= get('id') =}">
-            <img data="image_url" src='{= get('image_url') =}'></img>
-        </div>
-    </div>
-    <div class="editable-holder">
-        <div class="my_fleet">
-        </div>
-    </div>
-  </div>
-</script>
+        <script type="text/template" id="all-monsters-template">
+            <div class="span8">
+                <h1>Monsters</h1>
+                <div class="monsters">
+                </div>
+                <a href="#" class="new-monster btn-primary btn-large" >New Monster</a>
+            </div>
+        </script>  
+        <script type="text/template" id="all-fleets-template">
+            <div class="span8">
+                <h1>Fleets</h1>
+                <div class="fleets">
+                </div>
+                <a href="#" class="new-monster btn-primary btn-large" >New Fleet</a>
+            </div>
+        </script>
 
-<script type="text/template" id="fleet-mini-template">
-  <div class="one_fleet fleet" style="background-color:#{= get('color') =}">
-    <img style="width:30px;height:30px;" src='{= get('image_url') =}'></img>
-    <bold class='name inline'>{= get('name') =}</bold>
-  </div>
-</script>
+        <script type="text/template" id="all-template">
+            <div class="span4">
+                <a href="#fleets"><h1>Fleets</h1></a>
+                <div class="fleets">
+                </div>
+                <a href="#" class="new-fleet btn-primary btn-large" >New Fleet</a>
+            </div>
+            <div class="span4">
+                <a href="#monsters"><h1>Monsters</h1></a>
+                <div class="monsters">
+                </div>
+                <a href="#" class="new-monster btn-primary btn-large" >New Monster</a>
+            </div>
+        </script>
 
-<script type="text/template" id="fleet-multi-template">
-  <h4>Select the fleet to which this moster belongs</h4>
-  {% _.each(models, function(fleet){  %}
-    <div data="{= fleet.get('id') =}" class="many_fleet fleet" style="background-color:#{= fleet.get('color') =}">
-      <img style="width:30px;height:30px;" src='{= fleet.get('image_url') =}'></img>
-      <bold class='name inline'>{= fleet.get('name') =}</bold>
-    </div>
-    {% }); %}
-</script>
+        <script type="text/template" id="single-template">
+            <div class="span8">
+                <h1>{= title =}</h1>
+                <div class="holding">
+                </div>
+            </div>
+        </script>
 
-<script type="text/template" id="fleet-template">
-<div class="well fleet  {% if(!isValid()){ %} has_errors {% } %}" style="background-color:#{= get('color') =}">
-    <span class="destroy">X</span>
-    <div class="editable-holder">
-        <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
-    </div>
-    <div class="editable-holder">
-        <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
-    </div>
-    <div class="editable-holder">
-        <p>#<strong contentEditable='true' data="color" class='color editable'>{= get('color') =}</strong></p>
-    </div>
-    <div class="editable-holder">
-        <div class='imgeditable editable' data="{= get('id') =}">
-            <img data="image_url" src='{= get('image_url') =}'></img>
-        </div>
-    </div>
-  </div>
-</script>
 
-<script type="text/template" id="monster-file-template">
-  <form action='/monsters/{= id =}' method="post" enctype="multipart/form-data">
-    <input name="_method" type="hidden" value="put">
-    <input name="monster[image]" type="file">
-    <input name="commit" type="submit" value="Update Monster" class="btn-primary">
-  </form>
-</script>
+        <script type="text/template" id="monster-template">
+            <div class="well monster  {% if(!isValid()){ %} has_errors {% } %}">
+                <span class="destroy">X</span>
+                <div class="editable-holder">
+                    <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
+                </div>
+                <div class="editable-holder">
+                    <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+                </div>
+                <div class="editable-holder">
+                    <div class='imgeditable editable' data="{= get('id') =}">
+                        <img data="image_url" src='{= get('image_url') =}'></img>
+                    </div>
+                </div>
+                <div class="editable-holder">
+                    <div class="my_fleet">
+                    </div>
+                </div>
+            </div>
+        </script>
 
-<script type="text/template" id="fleet-file-template">
-  <form action='/fleets/{= id =}' method="post" enctype="multipart/form-data">
-    <input name="_method" type="hidden" value="put">
-    <input name="fleet[image]" type="file">
-    <input name="commit" type="submit" value="Update Fleet" class="btn-primary">
-  </form>
-</script>
+        <script type="text/template" id="fleet-mini-template">
+            <div class="one_fleet fleet" style="background-color:#{= get('color') =}">
+                <img style="width:30px;height:30px;" src='{= get('image_url') =}'></img>
+                <bold class='name inline'>{= get('name') =}</bold>
+            </div>
+        </script>
 
-<script src="/javascript/lib/underscore-1.3.3.js"></script>
-<script type="text/javascript">
-  _.templateSettings = {
+        <script type="text/template" id="fleet-multi-template">
+            <h4>Select the fleet to which this moster belongs</h4>
+            {% _.each(models, function(fleet){  %}
+                <div data="{= fleet.get('id') =}" class="many_fleet fleet" style="background-color:#{= fleet.get('color') =}">
+                    <img style="width:30px;height:30px;" src='{= fleet.get('image_url') =}'></img>
+                    <bold class='name inline'>{= fleet.get('name') =}</bold>
+                </div>
+                {% }); %}
+        </script>
+
+        <script type="text/template" id="fleet-template">
+            <div class="well fleet  {% if(!isValid()){ %} has_errors {% } %}" style="background-color:#{= get('color') =}">
+                <span class="destroy">X</span>
+                <div class="editable-holder">
+                    <h3 contentEditable='true' data="name" class='name editable inline'>{= get('name') =}</h3>
+                </div>
+                <div class="editable-holder">
+                    <p contentEditable='true' data="description" class='description editable'>{= get('description') =}</p>
+                </div>
+                <div class="editable-holder">
+                    <p>#<strong contentEditable='true' data="color" class='color editable'>{= get('color') =}</strong></p>
+                </div>
+                <div class="editable-holder">
+                    <div class='imgeditable editable' data="{= get('id') =}">
+                        <img data="image_url" src='{= get('image_url') =}'></img>
+                    </div>
+                </div>
+            </div>
+        </script>
+
+        <script type="text/template" id="monster-file-template">
+            <form action='/monsters/{= id =}' method="post" enctype="multipart/form-data">
+                <input name="_method" type="hidden" value="put">
+                <input name="monster[image]" type="file">
+                <input name="commit" type="submit" value="Update Monster" class="btn-primary">
+            </form>
+        </script>
+
+        <script type="text/template" id="fleet-file-template">
+            <form action='/fleets/{= id =}' method="post" enctype="multipart/form-data">
+                <input name="_method" type="hidden" value="put">
+                <input name="fleet[image]" type="file">
+                <input name="commit" type="submit" value="Update Fleet" class="btn-primary">
+            </form>
+        </script>
+
+        <script src="/javascript/lib/underscore-1.3.3.js"></script>
+        <script type="text/javascript">
+            _.templateSettings = {
 interpolate : /\{=([\s\S]+?)=\}/g,
                evaluate : /\{%([\s\S]+?)%\}/g
-  };
+            };
 </script>
 
 <script src="/javascript/lib/backbone.js"></script>
@@ -103,38 +145,38 @@ interpolate : /\{=([\s\S]+?)=\}/g,
 <script type="text/javascript" src="/javascript/spec/SpecHelper.js"></script>
 <script type="text/javascript" src="/javascript/spec/MonsterSpec.js"></script>
 
-  <script type="text/javascript">
+<script type="text/javascript">
     (function() {
-      var jasmineEnv = jasmine.getEnv();
-      jasmineEnv.updateInterval = 1000;
+     var jasmineEnv = jasmine.getEnv();
+     jasmineEnv.updateInterval = 1000;
 
-      var htmlReporter = new jasmine.HtmlReporter();
+     var htmlReporter = new jasmine.HtmlReporter();
 
-      jasmineEnv.addReporter(htmlReporter);
+     jasmineEnv.addReporter(htmlReporter);
 
-      jasmineEnv.specFilter = function(spec) {
-        return htmlReporter.specFilter(spec);
-      };
+     jasmineEnv.specFilter = function(spec) {
+     return htmlReporter.specFilter(spec);
+     };
 
-      var currentWindowOnload = window.onload;
+     var currentWindowOnload = window.onload;
 
-      window.onload = function() {
-        if (currentWindowOnload) {
-          currentWindowOnload();
-        }
-        execJasmine();
-      };
+     window.onload = function() {
+     if (currentWindowOnload) {
+     currentWindowOnload();
+     }
+     execJasmine();
+     };
 
-      function execJasmine() {
-        jasmineEnv.execute();
-      }
+     function execJasmine() {
+         jasmineEnv.execute();
+     }
 
     })();
-  </script>
+</script>
 
-</head>
+    </head>
 
-<body>
-</body>
-      </html>
+    <body>
+    </body>
 
+</html>

@@ -1,6 +1,7 @@
 .top-row {
   padding-top: 50px;
 }
+strong {min-width: 10px;}
 .server_errors { border: 2px solid #00FF00; }
 .server_error { border: 2px solid #00FF00; }
 .client_error { border: 2px solid #FF0000; }

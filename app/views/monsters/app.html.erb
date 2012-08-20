@@ -5,22 +5,11 @@
 <script type="text/javascript">
   $(document).ready(function(){
 
-      window.do_client_validations = true;
       window.csrf_param = $('meta[name=csrf-param]').attr('content');
       window.csrf_token = $('meta[name=csrf-token]').attr('content');
 
-      var router = new MonstersApp({pushState: true, el : "#multi_view" });
+      window.router = new MonstersApp({pushState: true, el : "#multi_view" });
       Backbone.history.start();
-      router.navigate("", true);
-
-      $('body').on('click', 'a', function(e){
-        e.preventDefault();
-        var $a = $(e.target).closest('a');
-        var href = $a.attr('href');
-
-        if(href === '#') return; // Escape the null link
-        router.navigate(href, true);
-        });
       });
 
     webcam.set_swf_url('/webcam.swf');
@@ -37,11 +26,11 @@
     <li>You can edit Fleets and Monsters attributes in-line, click on 'edit' and then on the attribute you want to change.</li>
     <li>When you change any attribute on a Fleet, the views on monsters should be automatically updated as well.</li>
     <li>You can only destroy Fleets that have no monsters (validation is done on client and on server).</li>
-    <li>Validations for attributes are done on client first, then on server side.</li>
+    <li>Validations for attributes are done on client first: *if they pass on client* then validates on server side.</li>
     <li style="border:2px solid red;">Client-side validation errors are highlighted in red.</li>
     <li style="border:2px solid #00ff00;">Server-side errors are highlighted in green.</li>
     <li>
-      <input type="checkbox" checked="true" onchange="window.do_client_validations = !window.do_client_validations"></input>
+      <input type="checkbox" checked="true" onchange="window.router.toggle_client_validations()"></input>
       Perform Client Validations (vs. Server validations only)
     </li>
   </ul>
@@ -89,7 +78,7 @@
 </script>
 
 <script type="text/template" id="monster-template">
-  <div class="well monster {= is_valid_class() =} {= is_editable_class() =} {= is_new_class() =}"
+  <div class="well monster {= is_valid_class() =} {= is_editable_class() =} {= is_new_class() =}">
     <span class="destroy">X</span>
     <span class="make-editable">{= content_editable_text() =}</span>
     <div class="editable-holder name">

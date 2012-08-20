@@ -8,47 +8,59 @@ function find_fleet(fleets, id){
   return null;
 }
 
-
 window.BaseModel = Backbone.Model.extend({
-  validates_presence_of : function(name,attrs){
-    var retval = {};
-    if(!attrs[name]){
-      retval[name] = " must be present.";
-      return retval;
+  errors : {},
+  pending_changes : {},
+  ensure_errors_for : function(name){
+    if(!this.errors[name]){
+      this.errors[name]=[];
     }
-    return false;
+  },
+  validates_presence_of : function(name,attrs){
+    var v = this.pending_changes[name] || attrs[name];
+    if(!v){
+      this.ensure_errors_for(name);
+      this.errors[name].push(" must be present.");
+      return false;
+    }
+    return true;
   },
 validates_length_of : function(name,attrs,min,max){
-  var retval = {};
-  if(min && attrs[name].length < min){
-    retval[name] = " must be longer than " + min + " characters.";
-    return retval;
+  var v = this.pending_changes[name] || attrs[name];
+  if(min && v.length < min){
+    this.ensure_errors_for(name);
+    this.errors[name].push(" must be longer than " + min + " characters.");
+    return false;
   }
-  if(max && attrs[name].length > max){
-    retval[name] = " must be shorter than " + max + " characters.";
-    return retval;
+  if(max && v.length > max){
+    this.ensure_errors_for(name);
+    this.errors[name].push(" must be shorter than " + max + " characters.");
+    return false;
   }
-  return false;
+  return true;
 },
   validates_format_of : function(name,attrs,regex){
-    var retval = {};
-    if(!attrs[name].match(regex)){
-      retval[name] = " is not well-formed (must match "+regex+").";
-      return retval;
+    var v = this.pending_changes[name] || attrs[name];
+    if(!v.match(regex)){
+      this.ensure_errors_for(name);
+      this.errors[name].push(" is not well-formed (must match "+regex+").");
+      return false;
     }
-    return false;
+    return true;
   },
   validates_uniqueness_of : function(name,attrs,collection,getter){
+    var v = this.pending_changes[name] || attrs[name];
     var i,retval={};
     for(i in collection){
       if(collection[i] !== this){
-        if(getter(collection[i]).toUpperCase() === attrs[name].toUpperCase()){
-          retval[name] = " must be unique.";
-          return retval;
+        if(getter(collection[i]).toUpperCase() === v.toUpperCase()){
+          this.ensure_errors_for(name);
+          this.errors[name].push(" must be unique.");
+          return false;
         }
       }
     }
-    return false;
+    return true;
   }
 });
 
@@ -74,17 +86,17 @@ window.Monster = BaseModel.extend({
     this.set('fleet',my_fleet);
   }, 
     validate: function(attrs) {
-      if(!window.do_client_validations){
+      if(!window.router.do_client_validations){
         return ;
       }
-      var msg = this.validates_presence_of('name',attrs) ||
-        this.validates_length_of('name',attrs,5,20) ||
-        this.validates_presence_of('description',attrs) ||
-        this.validates_length_of('description',attrs,10,30) ||
-        this.validates_presence_of('fleet_id',attrs);
-      if(msg){
-        return msg;
-      }
+      this.errors = {};
+      this.validates_presence_of('name',attrs);
+      this.validates_length_of('name',attrs,5,20);
+      this.validates_presence_of('description',attrs);
+      this.validates_length_of('description',attrs,10,30);
+      this.validates_presence_of('fleet_id',attrs);
+
+      return !$.isEmptyObject(this.errors);
     }
 });
 
@@ -97,26 +109,29 @@ window.Fleet = BaseModel.extend({
   initialize: function(attrs,opts){
     this.on("error", function(model, error) {
       if(console){
-        console.log(error);
+        for(var nam in error){
+          if(error.hasOwnProperty(nam)){
+            console.log(nam + " "+ error[nam]);
+          }
+        }
       }
       return true;
     });
   }, 
   validate: function(attrs) {
-    if(!window.do_client_validations){
+    if(!window.router.do_client_validations){
       return;
     }
-    var msg = this.validates_presence_of('name',attrs) ||
-  this.validates_length_of('name',attrs,5,20) ||
-  this.validates_presence_of('description',attrs) ||
-  this.validates_length_of('description',attrs,10,30) ||
-  this.validates_presence_of('color',attrs) ||
-  this.validates_format_of('color',attrs,/[a-fA-F0-9]{6}/) ||
-  this.validates_uniqueness_of('color',attrs,this.collection.models,function(e){return e.get('color');});
+    this.errors = {};
+    this.validates_presence_of('name',attrs);
+    this.validates_length_of('name',attrs,5,20);
+    this.validates_presence_of('description',attrs);
+    this.validates_length_of('description',attrs,10,30);
+    this.validates_presence_of('color',attrs);
+    this.validates_format_of('color',attrs,/[a-fA-F0-9]{6}/);
+    this.validates_uniqueness_of('color',attrs,this.collection.models,function(e){return e.get('color');});
 
-  if(msg){
-    return msg;
-  }
+    return !$.isEmptyObject(this.errors);
   }
 });
 
@@ -138,17 +153,32 @@ window.BaseView = Backbone.View.extend({
   content_editable_helper : function(){ return (this.is_editable ? " contentEditable='true' " : ""); },
   is_editable : false,
   default_current_view : "thumb",
+  views_sizes : {
+    "thumb" : [240,160],
+  "medium" : [320,240],
+  "original" : [460,308]
+  },
+  image_size : function(){
+    if(this.views_sizes.hasOwnProperty(this.current_view || this.default_current_view)){
+      return this.views_sizes[this.current_view || this.default_current_view];
+    }else{
+      return this.views_sizes[this.default_current_view];
+    }
+  },
   image_url : function(){
     return this.model.get('image_urls')[this.current_view || this.default_current_view];
   },
   handle_error : function(model,errors){
     var nam;
-    for(nam in errors){
-      if(errors.hasOwnProperty(nam)){
+    $(this.el).find('.editable-holder').removeClass('client_errors');
+    $(this.el).find('.client_error').remove();
+    for(nam in model.errors){
+      if(model.errors.hasOwnProperty(nam)){
         var ele = $(this.el).find('.'+nam+'.editable-holder');
         ele.addClass('client_errors');
-        ele.find('.client_error').remove();
-        ele.append('<div class="client_error">'+nam+' '+errors[nam]+'</div>');
+//        ele.find('.client_error').remove();
+//        ele.find('[contentEditable]').html(model.get(nam));
+        ele.append('<div class="client_error">'+nam+' '+model.errors[nam]+'</div>');
       }
     }
   },
@@ -163,7 +193,7 @@ window.BaseView = Backbone.View.extend({
   }, 
   upload_complete : function(msg,el) {
     window.webcam.reset();
-    this.model.fetch()
+    this.model.fetch();
     el.removeClass('spinning');
   },
   toggle_editable: function(ev) {
@@ -190,7 +220,11 @@ window.BaseView = Backbone.View.extend({
     var myself=this;
     var txt = $(ev.currentTarget).text();
     var which = $(ev.currentTarget).attr('data');
-    if(this.model.set(which,txt)){
+    this.model.pending_changes[which]=txt;
+    console.log("pending_changes:");
+    console.log(this.model.pending_changes);
+    if(this.model.set(this.model.pending_changes,{silent: !window.router.do_client_validations})){
+      delete this.model.pending_changes[which];
       var xhr=this.model.save(null,{wait:true,
         success:function(model,resp){
           if(console){
@@ -202,10 +236,12 @@ window.BaseView = Backbone.View.extend({
         error:function(model,resp){
           var json = JSON.parse(resp.responseText);
           var ele, nam;
-          $(ev.currentTarget).html(myself.before);
+          $(myself.el).find('.editable-holder').removeClass('server_errors');
+          $(myself.el).find('.server_error').remove();
+//        $(ev.currentTarget).html(myself.before);
           for(nam in json){
             if(json.hasOwnProperty(nam)){
-              if(nam == 'base'){
+              if(nam === 'base'){
                 $(myself.el).append('<div class="server_error">'+json[nam]+'</div>');
               }else{
                 ele = $(myself.el).find('.'+nam+'.editable-holder');
@@ -217,11 +253,12 @@ window.BaseView = Backbone.View.extend({
           }
         }
       });
-      if(xhr){
+/*    if(xhr){
         $(ev.currentTarget).removeClass('has_errors');
-      }
+      }*/
     }else{
-      $(ev.currentTarget).addClass('has_errors');
+      this.model.pending_changes[which] = txt;
+//    $(ev.currentTarget).addClass('has_errors');
     }
   },
   on_focus: function(ev){
@@ -260,7 +297,8 @@ window.BaseView = Backbone.View.extend({
         myedit.addClass('spinning');
       }
     }); 
-    $(this.el).find('.webcam_holder').html(webcam.get_html(240, 180));
+    var imgsize = this.image_size();
+    $(this.el).find('.webcam_holder').html(webcam.get_html(imgsize[0],imgsize[1]));
   }
 });
 
@@ -276,7 +314,7 @@ window.MonsterSmallView = BaseView.extend({
     this.fleet_view = new FleetThumbView({model:this.model.get('fleet')});
 
     if(this.model.isNew()){
-      this.is_editable = true
+      this.is_editable = true;
       this.fleet_view.is_editable=true;
     }
 
@@ -351,7 +389,7 @@ window.SingleView = Backbone.View.extend({
 
 window.FleetThumbView = Backbone.View.extend({
   image_url : function(model){
-    return (model||this.model).get('image_urls')['thumb'];
+    return (model||this.model).get('image_urls').thumb;
   },
   template: _.template($('#fleet-mini-template').html()),
   template_multi: _.template($('#fleet-multi-template').html()),
@@ -410,7 +448,7 @@ window.FleetSmallView = BaseView.extend({
     this.current_view = attrs.current_view;
 
     if(this.model.isNew()){
-      this.is_editable = true
+      this.is_editable = true;
     }
 
     $(attrs.holder).append(this.render().el);
@@ -511,7 +549,7 @@ window.GeneralView = BigBaseView.extend({
       this.monster_views = [];
       col.each(function(modl){
         this.monster_views.push(new MonsterSmallView({model:modl, holder : $(this.el).find('.monsters')}));
-      },this)
+      },this);
     },this);
     this.fetch_fleets();
   },
@@ -549,12 +587,12 @@ window.MonsterCollectionView = BigBaseView.extend({
       this.monster_views = [];
       col.each(function(modl){
         this.monster_views.push(new MonsterSmallView({model:modl, holder : $(this.el).find('.monsters'), current_view : "medium"}));
-      },this)
+      },this);
     },this);
     this.fetch_fleets();
   },
   events : {
-    'click a.new-monster' : "new_monster",
+    'click a.new-monster' : "new_monster"
   },
   render:function(){
     $(this.el).html(this.template());
@@ -580,7 +618,7 @@ window.FleetCollectionView = BigBaseView.extend({
     this.fetch_fleets();
   },
   events : {
-    'click a.new-fleet' : "new_fleet",
+    'click a.new-fleet' : "new_fleet"
   },
   render:function(){
     $(this.el).html(this.template());
@@ -594,6 +632,15 @@ var MonstersApp = Backbone.Router.extend({
     this.monster_collection = new MonsterCollection();
     this.fleet_collection = new FleetCollection();
     this.viewing = null;
+  },
+  do_client_validations : true, 
+  toggle_client_validations : function(){
+    if(this.do_client_validations){
+      $(this.el).find(".client_errors").removeClass("client_errors");
+      $(this.el).find(".client_error").remove();
+    }else{
+    }
+    this.do_client_validations = !this.do_client_validations;
   },
     remove_old_view : function(){
       if(this.viewing){
@@ -631,14 +678,14 @@ var MonstersApp = Backbone.Router.extend({
       });
       console.log("GOING TO fleets");
     },
-    show_monster: function(id) {
+    show_monster: function(id_string) {
       this.remove_old_view();
-      var id = parseInt(id,10);
+      var id = parseInt(id_string,10);
       var myself=this;
       var monster = this.monster_collection.get(id);
       if(monster){
         this.viewing = new SingleView({ title : "Monster "+id, holder : this.el });
-        var thingy= new MonsterSmallView({model:monster, holder : $(this.viewing.el).find('.holding') });
+        var thingy= new MonsterSmallView({model:monster, holder : $(this.viewing.el).find('.holding'), current_view : "original"  });
       }else{
         this.monster_collection.fetch({
           fleet_collection: this.fleet_collection,
@@ -651,21 +698,21 @@ var MonstersApp = Backbone.Router.extend({
             var monster = col.get(id);
             if(monster){
               myself.viewing = new SingleView({ title : "Monster "+id, holder : myself.el });
-              var thingy= new MonsterSmallView({model:monster, holder : $(myself.viewing.el).find('.holding') });
+              var thingy= new MonsterSmallView({model:monster, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
             }
           }
         });
         console.log("MONSTER NOT FOUND:"+id);
       }
     },
-    show_fleet: function(id) {
+    show_fleet: function(id_string) {
       this.remove_old_view();
-      var id = parseInt(id,10);
+      var id = parseInt(id_string,10);
       var myself=this;
       var fleet = this.fleet_collection.get(id);
       if(fleet){
         this.viewing = new SingleView({ title : "Fleet "+id, holder : this.el });
-        var thingy = new FleetSmallView({ model: fleet, holder : $(this.viewing.el).find('.holding') });
+        var thingy = new FleetSmallView({ model: fleet, holder : $(this.viewing.el).find('.holding'), current_view : "original" });
       }else{
         this.fleet_collection.fetch({
           error: function(col,resp){
@@ -677,7 +724,7 @@ var MonstersApp = Backbone.Router.extend({
             var fleet = col.get(id);
             if(fleet){
               myself.viewing = new SingleView({ title : "Fleet "+id, holder : myself.el });
-              var thingy = new FleetSmallView({ model: fleet, holder : $(myself.viewing.el).find('.holding') });
+              var thingy = new FleetSmallView({ model: fleet, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
             }
           }
         });
