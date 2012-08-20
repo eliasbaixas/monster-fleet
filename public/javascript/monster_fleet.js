@@ -753,7 +753,11 @@ var MonstersApp = Backbone.Router.extend({
       "monsters": "index_monsters",    // #monsters
       "fleets":   "index_fleets",      // #fleets
       "monsters/:id" : "show_monster", // #monsters/7
-      "fleets/:id":   "show_fleet"    // #fleets/8
+      "fleets/:id":   "show_fleet",    // #fleets/8
+      "*path":     "not_found",
+    },
+    not_found: function(path) {
+      this.viewing = new NotFoundView({ title : "Page " + path +" not found", holder : this.el, back_to : "#"});
     },
     all: function() {
       this.remove_old_view();

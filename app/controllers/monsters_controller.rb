@@ -62,15 +62,20 @@ class MonstersController < ApplicationController
   end
 
   def update
-    @monster = Monster.find(params[:id])
+    @monster = Monster.where(:id => params[:id]).first
 
     respond_to do |format|
-      if @monster.update_attributes(params[:monster])
-        format.html { redirect_to @monster, notice: 'Monster was successfully updated.' }
-        format.json { head :no_content }
+      if ! @monster
+        format.html { redirect_to monsters_url, :notice=> 'Monster does not exist.' }
+        format.json { render :json => {:base => "Monster does not exist! (someone might have deleted it)"} , :status => :unprocessable_entity }
       else
-        format.html { render action: "edit" }
-        format.json { render json: @monster.errors, status: :unprocessable_entity }
+        if @monster.update_attributes(params[:monster])
+          format.html { redirect_to @monster, notice: 'Monster was successfully updated.' }
+          format.json { head :no_content }
+        else
+          format.html { render action: "edit" }
+          format.json { render json: @monster.errors, status: :unprocessable_entity }
+        end
       end
     end
   end

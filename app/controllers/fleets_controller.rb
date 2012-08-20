@@ -64,7 +64,7 @@ class FleetsController < ApplicationController
     respond_to do |format|
       if ! @fleet
         format.html { redirect_to fleets_url, :notice=> 'Fleet does not exist.' }
-        format.json { render :json => {:base => "Fleet does not exist!"} , :status => :unprocessable_entity }
+        format.json { render :json => {:base => "Fleet does not exist! (someone might have deleted it)"} , :status => :unprocessable_entity }
       else
         if @fleet.update_attributes(params[:fleet])
           format.html { redirect_to @fleet, :notice=> 'Fleet was successfully updated.' }
