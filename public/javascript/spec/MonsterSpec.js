@@ -9,7 +9,7 @@ describe("BaseModel", function() {
     it("should validate presence correctly", function() {
       expect(aModel.validates_presence_of('name',aModel.attributes)).toEqual(true);
       expect(aModel.validates_presence_of('something',aModel.attributes)).toEqual(false);
-      expect(aModel.errors).toEqual({something : [' must be present.']});
+      expect(aModel.errors).toEqual({something : [' must be present']});
       aModel.errors={};
     });
 
@@ -22,19 +22,19 @@ describe("BaseModel", function() {
       aModel.errors = {};
 
       expect(aModel.validates_length_of('name',aModel.attributes,5,10)).toEqual(false);
-      expect(aModel.errors).toEqual({name : [' must be longer than 5 characters.']});
+      expect(aModel.errors).toEqual({name : [' must be longer than 5 characters (it is 4)']});
 
       aModel.errors = {};
 
       expect(aModel.validates_length_of('name',aModel.attributes,2,3)).toEqual(false);
-      expect(aModel.errors).toEqual({name : [' must be shorter than 3 characters.']});
+      expect(aModel.errors).toEqual({name : [' must be shorter than 3 characters (it is 4)']});
     });
 
     it("should validate format correctly", function() {
       aModel.errors = {};
       expect(aModel.validates_format_of('name',aModel.attributes,/asdf/)).toEqual(true);
       expect(aModel.validates_format_of('name',aModel.attributes,/fdsa/)).toEqual(false);
-      expect(aModel.errors).toEqual({name : [' is not well-formed (must match /fdsa/).']});
+      expect(aModel.errors).toEqual({name : [' is not well-formed (must match /fdsa/)']});
     });
 
     it("should validate uniqueness correctly", function() {
