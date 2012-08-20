@@ -1,30 +1,47 @@
 describe("BaseModel", function() {
   describe("validates", function() {
-    var aModel= new BaseModel({ name : "asdf" });
+    var aModel;
+
+    beforeEach(function() {
+      aModel = new BaseModel({ name : "asdf" });
+    });
 
     it("should validate presence correctly", function() {
-      expect(aModel.validates_presence_of('name',aModel.attributes)).toEqual(false);
-      expect(aModel.validates_presence_of('something',aModel.attributes)).toEqual({something : ' must be present.'});
+      expect(aModel.validates_presence_of('name',aModel.attributes)).toEqual(true);
+      expect(aModel.validates_presence_of('something',aModel.attributes)).toEqual(false);
+      expect(aModel.errors).toEqual({something : [' must be present.']});
+      aModel.errors={};
     });
 
     it("should validate length correctly", function() {
-      expect(aModel.validates_length_of('name',aModel.attributes,3,6)).toEqual(false);
-      expect(aModel.validates_length_of('name',aModel.attributes,4,6)).toEqual(false);
-      expect(aModel.validates_length_of('name',aModel.attributes,2,4)).toEqual(false);
-      expect(aModel.validates_length_of('name',aModel.attributes,5,10)).toEqual({name : ' must be longer than 5 characters.'});
-      expect(aModel.validates_length_of('name',aModel.attributes,2,3)).toEqual({name : ' must be shorter than 3 characters.'});
+      aModel.errors={};
+      expect(aModel.validates_length_of('name',aModel.attributes,3,6)).toEqual(true);
+      expect(aModel.validates_length_of('name',aModel.attributes,4,6)).toEqual(true);
+      expect(aModel.validates_length_of('name',aModel.attributes,2,4)).toEqual(true);
+
+      aModel.errors = {};
+
+      expect(aModel.validates_length_of('name',aModel.attributes,5,10)).toEqual(false);
+      expect(aModel.errors).toEqual({name : [' must be longer than 5 characters.']});
+
+      aModel.errors = {};
+
+      expect(aModel.validates_length_of('name',aModel.attributes,2,3)).toEqual(false);
+      expect(aModel.errors).toEqual({name : [' must be shorter than 3 characters.']});
     });
 
     it("should validate format correctly", function() {
-      expect(aModel.validates_length_of('name',aModel.attributes,/asdf/)).toEqual(false);
-      expect(aModel.validates_format_of('name',aModel.attributes,/fdsa/)).toEqual({name : ' is not well-formed (must match /fdsa/).'});
+      aModel.errors = {};
+      expect(aModel.validates_format_of('name',aModel.attributes,/asdf/)).toEqual(true);
+      expect(aModel.validates_format_of('name',aModel.attributes,/fdsa/)).toEqual(false);
+      expect(aModel.errors).toEqual({name : [' is not well-formed (must match /fdsa/).']});
     });
 
     it("should validate uniqueness correctly", function() {
       var col = [{name:"uno"},{name:"dos"}];
-      expect(aModel.validates_uniqueness_of('name',aModel.attributes,col,function(i){return i.name;})).toEqual(false);
+      expect(aModel.validates_uniqueness_of('name',aModel.attributes,col,function(i){return i.name;})).toEqual(true);
       col = [{name:"uno"},{name:"asdf"}];
-      expect(aModel.validates_uniqueness_of('name',aModel.attributes,col,function(i){return i.name;})).not.toEqual(false);
+      expect(aModel.validates_uniqueness_of('name',aModel.attributes,col,function(i){return i.name;})).not.toEqual(true);
     });
 
   });

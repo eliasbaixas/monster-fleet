@@ -377,6 +377,7 @@ window.MonsterSmallView = BaseView.extend({
 window.SingleView = Backbone.View.extend({
   template: _.template($('#single-template').html()),
   initialize: function(opts){
+    this.back_to = opts.back_to;
     this.title = opts.title;
     $(opts.holder).html(this.el);
     this.render();
@@ -684,7 +685,7 @@ var MonstersApp = Backbone.Router.extend({
       var myself=this;
       var monster = this.monster_collection.get(id);
       if(monster){
-        this.viewing = new SingleView({ title : "Monster "+id, holder : this.el });
+        this.viewing = new SingleView({ title : "Monster "+id, holder : this.el, back_to : "#monsters" });
         var thingy= new MonsterSmallView({model:monster, holder : $(this.viewing.el).find('.holding'), current_view : "original"  });
       }else{
         this.monster_collection.fetch({
@@ -697,7 +698,7 @@ var MonstersApp = Backbone.Router.extend({
             col.trigger('monsters_loaded',col);
             var monster = col.get(id);
             if(monster){
-              myself.viewing = new SingleView({ title : "Monster "+id, holder : myself.el });
+              myself.viewing = new SingleView({ title : "Monster "+id, holder : myself.el, back_to : "#monsters" });
               var thingy= new MonsterSmallView({model:monster, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
             }
           }
@@ -711,7 +712,7 @@ var MonstersApp = Backbone.Router.extend({
       var myself=this;
       var fleet = this.fleet_collection.get(id);
       if(fleet){
-        this.viewing = new SingleView({ title : "Fleet "+id, holder : this.el });
+        this.viewing = new SingleView({ title : "Fleet "+id, holder : this.el, back_to : "#fleets" });
         var thingy = new FleetSmallView({ model: fleet, holder : $(this.viewing.el).find('.holding'), current_view : "original" });
       }else{
         this.fleet_collection.fetch({
@@ -723,7 +724,7 @@ var MonstersApp = Backbone.Router.extend({
             col.trigger('monsters_loaded',col);
             var fleet = col.get(id);
             if(fleet){
-              myself.viewing = new SingleView({ title : "Fleet "+id, holder : myself.el });
+              myself.viewing = new SingleView({ title : "Fleet "+id, holder : myself.el , back_to : "#fleets"});
               var thingy = new FleetSmallView({ model: fleet, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
             }
           }
