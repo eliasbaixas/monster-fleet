@@ -2,24 +2,24 @@
  * BaseModel for our app.
  * Implements advanced error handling
  *  * at least, more fine-grained than Backbone's default
- *  * similar than Rails ActiveRecord#errors
+ *  * similar to Rails ActiveRecord#errors
  * If model is in inconsistent state (cannot be saved), then changes are stored in "pending_changes"
- * then, validations are performed on those "pending_changes" instead of inconsistent values.
- *
+ * then, validations are performed on those "pending_changes" instead of the inconsistent values.
+ * When model is successfully saved, pending_changes are reset.
  */
 window.BaseModel = Backbone.Model.extend({
-  errors : {},
+  errors : {} ,
 pending_changes : {},
-ensure_errors_for : function(name){
+errors_for : function(name){
   if(!this.errors[name]){
     this.errors[name]=[];
   }
+  return this.errors[name];
 },
 validates_presence_of : function(name,attrs){
   var v = this.pending_changes[name] || attrs[name];
   if(!v){
-    this.ensure_errors_for(name);
-    this.errors[name].push(" must be present");
+    this.errors_for(name).push(" must be present");
     return false;
   }
   return true;
@@ -27,13 +27,11 @@ validates_presence_of : function(name,attrs){
 validates_length_of : function(name,attrs,min,max){
   var v = this.pending_changes[name] || attrs[name];
   if(min && v.length < min){
-    this.ensure_errors_for(name);
-    this.errors[name].push(" must be longer than " + min + " characters (it is "+v.length+")");
+    this.errors_for(name).push(" must be longer than " + min + " characters (it is "+v.length+")");
     return false;
   }
   if(max && v.length > max){
-    this.ensure_errors_for(name);
-    this.errors[name].push(" must be shorter than " + max + " characters (it is "+v.length+")");
+    this.errors_for(name).push(" must be shorter than " + max + " characters (it is "+v.length+")");
     return false;
   }
   return true;
@@ -41,8 +39,7 @@ validates_length_of : function(name,attrs,min,max){
   validates_format_of : function(name,attrs,regex){
     var v = this.pending_changes[name] || attrs[name];
     if(!v.match(regex)){
-      this.ensure_errors_for(name);
-      this.errors[name].push(" is not well-formed (must match "+regex+")");
+      this.errors_for(name).push(" is not well-formed (must match "+regex+")");
       return false;
     }
     return true;
@@ -53,8 +50,7 @@ validates_length_of : function(name,attrs,min,max){
     for(i in collection){
       if(collection[i] !== this){
         if(getter(collection[i]).toUpperCase() === v.toUpperCase()){
-          this.ensure_errors_for(name);
-          this.errors[name].push(" must be unique");
+          this.errors_for(name).push(" must be unique");
           return false;
         }
       }
@@ -174,7 +170,7 @@ window.BaseView = Backbone.View.extend({
   /* == template helpers end == */
   file_template : _.template($('#file-template').html()),
   is_editable : false,
-  /* == image sizes and URLs related stuff == */
+  /* === image sizes and URLs related stuff === */
   default_current_view : "thumb",
   views_sizes : {
     "thumb" : [240,160],
@@ -191,7 +187,7 @@ window.BaseView = Backbone.View.extend({
   image_url : function(){
     return this.model.get('image_urls')[this.current_view || this.default_current_view];
   },
-  /* == event handlers */
+  /* === event handlers === */
   handle_error : function(model,errors){
     var name;
     $(this.el).find('.editable-holder').removeClass('client_errors');
@@ -507,6 +503,7 @@ window.FleetView = BaseView.extend({
 });
 
 window.BaseCollectionView = Backbone.View.extend({
+  my_filter : null,
   render:function(){
     $(this.el).html(this.template());
   },
@@ -569,7 +566,6 @@ window.GeneralView = BaseCollectionView.extend({
     $(this.holder).append(this.el);
     this.render();
     this.fleets.on('fleets_loaded',function(col){
-      console.log("Processing fleets_loaded");
       _.each(this.fleet_views,function(view){view.remove();});
       this.fleet_views = [];
       col.each(function(modl){
@@ -604,10 +600,10 @@ window.MonsterCollectionView = BaseCollectionView.extend({
   initialize : function(opts){
     this.monsters = opts.monster_collection;
     this.fleets = opts.fleet_collection;
+    this.my_filter = opts.my_filter;
     $(opts.holder).append(this.el);
     this.render();
     this.fleets.on('fleets_loaded',function(col){
-      console.log("Processing fleets_loaded");
       _.each(this.fleet_views,function(view){view.remove();});
       this.fleet_views = [];
       col.each(function(modl){
@@ -619,10 +615,16 @@ window.MonsterCollectionView = BaseCollectionView.extend({
       _.each(this.monster_views,function(view){view.remove();});
       this.monster_views = [];
       col.each(function(modl){
-        this.monster_views.push(new MonsterView({model:modl, holder : $(this.el).find('.monsters'), current_view : "medium"}));
+        if(!this.my_filter || this.my_filter(modl)){
+          this.monster_views.push(new MonsterView({model:modl, holder : $(this.el).find('.monsters'), current_view : "medium"}));
+        }
       },this);
     },this);
-    this.fetch_fleets();
+    if(!opts.skip_fetch){
+      this.fetch_fleets();
+    }else{
+      this.fetch_monsters();
+    }
   },
   events : {
     'click a.new-monster' : "new_monster"
@@ -638,16 +640,21 @@ window.FleetCollectionView = BaseCollectionView.extend({
   fleet_views : [],
   initialize : function(opts){
     this.fleets = opts.fleet_collection;
+    this.my_filter = opts.my_filter;
     $(opts.holder).append(this.el);
     this.render();
     this.fleets.on('fleets_loaded',function(col){
       _.each(this.fleet_views,function(view){view.remove();});
       this.fleet_views = [];
       col.each(function(modl){
-        this.fleet_views.push(new FleetView({model:modl, holder : $(this.el).find('.fleets'), current_view : "medium"}));
+        if(!this.my_filter || this.my_filter(modl)){
+          this.fleet_views.push(new FleetView({model:modl, holder : $(this.el).find('.fleets'), current_view : "medium"}));
+        }
       },this);
     },this);
-    this.fetch_fleets();
+    if(!opts.skip_fetch){
+      this.fetch_fleets();
+    }
   },
   events : {
     'click a.new-fleet' : "new_fleet"
@@ -707,7 +714,6 @@ var MonstersApp = Backbone.Router.extend({
         holder : this.el,
         fleet_collection : this.fleet_collection
       });
-      console.log("GOING TO fleets");
     },
     show_monster: function(id_string) {
       this.remove_old_view();
@@ -744,6 +750,14 @@ var MonstersApp = Backbone.Router.extend({
       if(fleet){
         this.viewing = new SingleView({ title : "Fleet "+id, holder : this.el, back_to : "#fleets" });
         var thingy = new FleetView({ model: fleet, holder : $(this.viewing.el).find('.holding'), current_view : "original" });
+        var thingyl = new MonsterCollectionView({
+          skip_fetch : true,
+          monster_collection : this.monster_collection,
+            fleet_collection : this.fleet_collection,
+            holder : $(this.viewing.el).find('.holding'),
+            current_view : "original",
+            my_filter : function(m){return m.get('fleet_id') === id;}
+        });
       }else{
         this.fleet_collection.fetch({
           error: function(col,resp){
@@ -755,6 +769,13 @@ var MonstersApp = Backbone.Router.extend({
             if(fleet){
               myself.viewing = new SingleView({ title : "Fleet "+id, holder : myself.el , back_to : "#fleets"});
               var thingy = new FleetView({ model: fleet, holder : $(myself.viewing.el).find('.holding'), current_view : "original"  });
+              var thingyl = new MonsterCollectionView({
+                skip_fetch : true,
+                fleet_collection : myself.fleet_collection,
+                monster_collection : myself.monster_collection,
+                holder : $(myself.viewing.el).find('.holding'),
+                  current_view : "original",
+                  my_filter : function(m){return m.get('fleet_id') === id;} });
             }else{
               myself.viewing = new NotFoundView({ title : "Fleet "+id+" NOT FOUND", holder : myself.el, back_to : "#monsters"});
             }

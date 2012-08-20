@@ -33,6 +33,7 @@
       <input type="checkbox" checked="true" onchange="window.router.toggle_client_validations()"></input>
       Perform Client Validations (vs. Server validations only)
     </li>
+    <li>On each collection view change (ie. all -> monsters -> fleets) the full collections are fetched from server.</li>
   </ul>
 </div>
 
@@ -48,6 +49,8 @@
   <div class="span8">
     <h1>{= title =}</h1><a href="{= back_to =}">[back]</a>
     <div class="holding">
+    </div>
+    <div class="fleets">
     </div>
   </div>
 </script>
