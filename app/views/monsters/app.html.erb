@@ -79,7 +79,7 @@
 
 <script type="text/template" id="monster-template">
   <div class="well monster {= is_valid_class() =} {= is_editable_class() =} {= is_new_class() =}">
-    <span class="destroy">X</span>
+    <span class="destroy">[destroy]</span>
     <span class="make-editable">{= content_editable_text() =}</span>
     <div class="editable-holder name">
       <h3 data="name" {= content_editable_helper() =} class='name editable inline'><a href="#monsters/{= model.get('id') =}">{= model.get('name') =}</a></h3>
@@ -126,7 +126,7 @@
 <script type="text/template" id="fleet-template">
   <div class="well fleet {= is_valid_class() =} {= is_editable_class() =} {= is_new_class() =}"
     style="background-color:#{= model.get('color') =}">
-    <span class="destroy">X</span>
+    <span class="destroy">[destroy]</span>
     <span class="make-editable">{= content_editable_text() =}</span>
     <div class="editable-holder name">
       <h3 data="name" {= content_editable_helper() =} class='name editable inline'><a href="#fleets/{= model.get('id') =}">{= model.get('name') =}</a></h3>
